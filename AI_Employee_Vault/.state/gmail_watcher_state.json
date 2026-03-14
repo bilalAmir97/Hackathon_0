@@ -1,0 +1,33 @@
+{
+  "last_poll_timestamp": "2026-03-14T00:08:04.600316Z",
+  "processed_email_ids": [
+    "19c95aaad450b92e",
+    "19ce60f77f19e67f",
+    "19c95ab7e5c61f3f",
+    "19ca03cbda2fe128",
+    "19c95a92d7d8738f"
+  ],
+  "error_count": 0,
+  "last_error": {
+    "timestamp": "2026-02-27T14:12:18.350990Z",
+    "error_type": "ServerNotFoundError",
+    "error_message": "Unable to find the server at gmail.googleapis.com"
+  },
+  "config": {
+    "poll_interval_seconds": 120,
+    "priority_keywords": [
+      "urgent",
+      "important",
+      "asap",
+      "invoice",
+      "payment",
+      "client",
+      "deadline",
+      "action required",
+      "critical",
+      "emergency"
+    ],
+    "max_emails_per_poll": 20
+  },
+  "queued_operations": []
+}

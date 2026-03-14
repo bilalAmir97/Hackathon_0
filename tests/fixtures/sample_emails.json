@@ -1,0 +1,62 @@
+[
+  {
+    "id": "msg_urgent_001",
+    "threadId": "thread_urgent_001",
+    "from": "client@example.com",
+    "subject": "URGENT: Project deadline moved up",
+    "snippet": "Hi, we need to discuss the urgent change to project timeline. The client has moved the deadline forward by two weeks.",
+    "labels": ["UNREAD", "INBOX", "IMPORTANT"],
+    "priority_keywords": ["urgent", "deadline"],
+    "date": "2026-02-25T14:30:00Z"
+  },
+  {
+    "id": "msg_invoice_002",
+    "threadId": "thread_invoice_002",
+    "from": "accounting@vendor.com",
+    "subject": "Invoice #12345 - Payment Due",
+    "snippet": "Please find attached invoice #12345 for services rendered. Payment is due within 30 days.",
+    "labels": ["UNREAD", "INBOX"],
+    "priority_keywords": ["invoice", "payment"],
+    "date": "2026-02-25T13:15:00Z"
+  },
+  {
+    "id": "msg_normal_003",
+    "threadId": "thread_normal_003",
+    "from": "newsletter@company.com",
+    "subject": "Weekly Newsletter - February 2026",
+    "snippet": "Check out this week's top stories and updates from our team.",
+    "labels": ["UNREAD", "INBOX"],
+    "priority_keywords": [],
+    "date": "2026-02-25T10:00:00Z"
+  },
+  {
+    "id": "msg_spam_004",
+    "threadId": "thread_spam_004",
+    "from": "promo@marketing.com",
+    "subject": "Limited Time Offer - 50% OFF",
+    "snippet": "Don't miss out on this amazing deal! Click here now to save big.",
+    "labels": ["UNREAD", "SPAM"],
+    "priority_keywords": [],
+    "date": "2026-02-25T09:30:00Z"
+  },
+  {
+    "id": "msg_client_005",
+    "threadId": "thread_client_005",
+    "from": "john.doe@client.com",
+    "subject": "Re: Project status update",
+    "snippet": "Thanks for the update. The client is very happy with the progress so far.",
+    "labels": ["UNREAD", "INBOX"],
+    "priority_keywords": ["client"],
+    "date": "2026-02-25T08:45:00Z"
+  },
+  {
+    "id": "msg_critical_006",
+    "threadId": "thread_critical_006",
+    "from": "support@service.com",
+    "subject": "CRITICAL: Server downtime alert",
+    "snippet": "We detected critical issues with your server. Immediate action required to prevent data loss.",
+    "labels": ["UNREAD", "INBOX", "IMPORTANT"],
+    "priority_keywords": ["critical", "action required"],
+    "date": "2026-02-25T07:00:00Z"
+  }
+]

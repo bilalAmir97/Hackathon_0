@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://hackathon0.ai-employee/schemas/log-entry.json",
+  "title": "Log Entry",
+  "description": "Schema for log entries in Logs/YYYY-MM-DD.json (JSON Lines format)",
+  "type": "object",
+  "required": [
+    "timestamp",
+    "log_id",
+    "action_type",
+    "status"
+  ],
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "description": "Event timestamp (ISO 8601 with milliseconds)",
+      "format": "date-time"
+    },
+    "log_id": {
+      "type": "string",
+      "description": "Unique log entry identifier (UUID v4)",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "action_type": {
+      "type": "string",
+      "description": "Type of action or event",
+      "enum": [
+        "email_detected",
+        "email_sent",
+        "approval_granted",
+        "approval_rejected",
+        "error",
+        "system_event",
+        "watcher_started",
+        "watcher_stopped",
+        "token_refreshed"
+      ]
+    },
+    "email_id": {
+      "type": "string",
+      "description": "Reference to Email Action Item",
+      "pattern": "^[a-zA-Z0-9]+$"
+    },
+    "approval_id": {
+      "type": "string",
+      "description": "Reference to Approval Request"
+    },
+    "status": {
+      "type": "string",
+      "description": "Execution status",
+      "enum": ["success", "failure", "pending"]
+    },
+    "inputs": {
+      "type": "object",
+      "description": "Action input parameters"
+    },
+    "outputs": {
+      "type": "object",
+      "description": "Action output/results"
+    },
+    "error_details": {
+      "type": "object",
+      "description": "Error information if status=failure",
+      "required": ["error_type", "error_message"],
+      "properties": {
+        "error_type": {
+          "type": "string",
+          "description": "Error classification",
+          "enum": [
+            "network_error",
+            "api_error",
+            "rate_limit",
+            "token_expired",
+            "validation_error",
+            "file_error",
+            "unknown_error"
+          ]
+        },
+        "error_message": {
+          "type": "string",
+          "description": "Human-readable error message"
+        },
+        "stack_trace": {
+          "type": "string",
+          "description": "Technical details for debugging"
+        }
+      }
+    },
+    "retry_count": {
+      "type": "integer",
+      "description": "Number of retry attempts",
+      "minimum": 0,
+      "maximum": 3
+    },
+    "execution_time_ms": {
+      "type": "integer",
+      "description": "Action duration in milliseconds",
+      "minimum": 0
+    }
+  }
+}

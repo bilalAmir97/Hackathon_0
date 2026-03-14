@@ -1,0 +1,55 @@
+{
+  "apps": [
+    {
+      "name": "whatsapp-processor",
+      "script": "uv",
+      "args": "run python scripts/auto_process_whatsapp.py",
+      "cwd": "/mnt/d/Bilal/Bilal/Bilal_Data/Hackathon/Hackathon_0",
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONPATH": "/mnt/d/Bilal/Bilal/Bilal_Data/Hackathon/Hackathon_0"
+      },
+      "error_file": "/tmp/whatsapp-processor-error.log",
+      "out_file": "/tmp/whatsapp-processor-out.log",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss",
+      "autorestart": true,
+      "max_restarts": 10,
+      "min_uptime": "10s",
+      "restart_delay": 5000
+    },
+    {
+      "name": "gmail-watcher",
+      "script": "uv",
+      "args": "run python watchers/gmail_watcher.py",
+      "cwd": "/mnt/d/Bilal/Bilal/Bilal_Data/Hackathon/Hackathon_0",
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONPATH": "/mnt/d/Bilal/Bilal/Bilal_Data/Hackathon/Hackathon_0"
+      },
+      "error_file": "/tmp/gmail-watcher-error.log",
+      "out_file": "/tmp/gmail-watcher-out.log",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss",
+      "autorestart": true,
+      "max_restarts": 10,
+      "min_uptime": "10s",
+      "restart_delay": 5000
+    },
+    {
+      "name": "linkedin-poster",
+      "script": "uv",
+      "args": "run python watchers/linkedin_api_poster.py --continuous --interval 300",
+      "cwd": "/mnt/d/Bilal/Bilal/Bilal_Data/Hackathon/Hackathon_0",
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONPATH": "/mnt/d/Bilal/Bilal/Bilal_Data/Hackathon/Hackathon_0"
+      },
+      "error_file": "/tmp/linkedin-api-poster-error.log",
+      "out_file": "/tmp/linkedin-api-poster-out.log",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss",
+      "autorestart": true,
+      "max_restarts": 10,
+      "min_uptime": "10s",
+      "restart_delay": 5000
+    }
+  ]
+}

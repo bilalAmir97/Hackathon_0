@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://hackathon0.ai-employee/schemas/approval-request.json",
+  "title": "Approval Request",
+  "description": "Schema for approval request files in Pending_Approval folder",
+  "type": "object",
+  "required": [
+    "approval_id",
+    "action_type",
+    "email_action_ref",
+    "action_params",
+    "risk_assessment",
+    "reasoning",
+    "created_at"
+  ],
+  "properties": {
+    "approval_id": {
+      "type": "string",
+      "description": "Unique approval identifier",
+      "pattern": "^APPROVAL_[0-9]{8}_[0-9]{6}_[a-z_]+$"
+    },
+    "action_type": {
+      "type": "string",
+      "description": "Type of action requiring approval",
+      "enum": ["email_send", "payment", "api_call"]
+    },
+    "email_action_ref": {
+      "type": "string",
+      "description": "Reference to Email Action Item (email_id)",
+      "pattern": "^[a-zA-Z0-9]+$"
+    },
+    "action_params": {
+      "type": "object",
+      "description": "Parameters for action execution",
+      "required": ["recipient", "subject", "body"],
+      "properties": {
+        "recipient": {
+          "type": "string",
+          "description": "Email recipient address",
+          "format": "email"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Email subject line"
+        },
+        "body": {
+          "type": "string",
+          "description": "Email body content"
+        },
+        "attachments": {
+          "type": "array",
+          "description": "Attachment references",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "risk_assessment": {
+      "type": "string",
+      "description": "Risk level for this action",
+      "enum": ["low", "medium", "high"]
+    },
+    "reasoning": {
+      "type": "string",
+      "description": "Why this action is needed",
+      "minLength": 10
+    },
+    "alternatives_considered": {
+      "type": "array",
+      "description": "Other approaches evaluated",
+      "items": {
+        "type": "string"
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "description": "Approval request creation timestamp",
+      "format": "date-time"
+    },
+    "approved_at": {
+      "type": "string",
+      "description": "Approval timestamp (if approved)",
+      "format": "date-time"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Human approver identifier"
+    },
+    "rejection_reason": {
+      "type": "string",
+      "description": "Reason for rejection (if rejected)"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+.uv/
+dist/
+build/
+*.egg-info/
+
+# Environment
+.env
+.env.local
+
+# Gmail API Credentials (Silver Tier)
+credentials.json
+token.json
+
+# WhatsApp Watcher Session (Silver Tier)
+.whatsapp_session/
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Obsidian
+.obsidian/
+
+# Process management
+*.pid
+
+# Archives
+AI_Employee_Vault/.archive/
+docs/archive/
+tests/archive/
+watchers/archive/

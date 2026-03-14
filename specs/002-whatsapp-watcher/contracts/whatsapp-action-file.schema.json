@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://hackathon0.ai-employee/schemas/whatsapp-action-file.json",
+  "title": "WhatsApp Action File",
+  "description": "Schema for WhatsApp message action files created in /Needs_Action folder",
+  "type": "object",
+  "required": [
+    "type",
+    "from",
+    "received",
+    "priority",
+    "status",
+    "original_timestamp"
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "Type of action file",
+      "const": "whatsapp_message"
+    },
+    "from": {
+      "type": "string",
+      "description": "Sender name from WhatsApp (contact or group name)",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "received": {
+      "type": "string",
+      "description": "ISO 8601 timestamp when message was detected by watcher",
+      "format": "date-time"
+    },
+    "priority": {
+      "type": "string",
+      "description": "Priority level (always 'high' for WhatsApp watcher)",
+      "enum": ["high"]
+    },
+    "status": {
+      "type": "string",
+      "description": "Processing status",
+      "enum": ["pending", "in_progress", "completed"]
+    },
+    "original_timestamp": {
+      "type": "string",
+      "description": "WhatsApp's displayed timestamp (e.g., '10:30 AM', 'Yesterday')",
+      "minLength": 1,
+      "maxLength": 50
+    },
+    "keywords_matched": {
+      "type": "array",
+      "description": "Priority keywords found in message (optional)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "chat_type": {
+      "type": "string",
+      "description": "Type of WhatsApp chat (optional)",
+      "enum": ["individual", "group"]
+    }
+  },
+  "additionalProperties": false
+}
