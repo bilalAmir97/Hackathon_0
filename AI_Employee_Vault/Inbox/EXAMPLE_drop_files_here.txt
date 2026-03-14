@@ -1,0 +1,9 @@
+This is an example document that would be dropped into the Inbox folder.
+
+When you drop a file here, the File System Watcher will:
+1. Detect the new file
+2. Create an action item in Needs_Action
+3. Include metadata about the file
+4. Suggest appropriate actions
+
+Try dropping your own files here to see the system in action!

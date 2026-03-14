@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://hackathon0.ai-employee/schemas/email-action.json",
+  "title": "Email Action Item",
+  "description": "Schema for email action files created by Gmail Watcher",
+  "type": "object",
+  "required": [
+    "email_id",
+    "thread_id",
+    "from",
+    "to",
+    "subject",
+    "date",
+    "snippet",
+    "body",
+    "created_at",
+    "status"
+  ],
+  "properties": {
+    "email_id": {
+      "type": "string",
+      "description": "Gmail message ID (unique identifier)",
+      "pattern": "^[a-zA-Z0-9]+$"
+    },
+    "thread_id": {
+      "type": "string",
+      "description": "Gmail thread ID",
+      "pattern": "^[a-zA-Z0-9]+$"
+    },
+    "from": {
+      "type": "string",
+      "description": "Sender email address and name",
+      "minLength": 1
+    },
+    "to": {
+      "type": "string",
+      "description": "Recipient email address",
+      "minLength": 1
+    },
+    "subject": {
+      "type": "string",
+      "description": "Email subject line"
+    },
+    "date": {
+      "type": "string",
+      "description": "Email date in ISO 8601 format",
+      "format": "date-time"
+    },
+    "snippet": {
+      "type": "string",
+      "description": "Preview text (first 200 chars)",
+      "maxLength": 200
+    },
+    "body": {
+      "type": "string",
+      "description": "Email body (first 1000 chars)",
+      "maxLength": 1000
+    },
+    "labels": {
+      "type": "array",
+      "description": "Gmail labels applied to email",
+      "items": {
+        "type": "string"
+      }
+    },
+    "priority_keywords": {
+      "type": "array",
+      "description": "Detected priority keywords",
+      "items": {
+        "type": "string"
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "description": "Action file creation timestamp (ISO 8601)",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "description": "Workflow state",
+      "enum": ["pending", "awaiting_approval", "approved", "rejected", "done"]
+    }
+  }
+}

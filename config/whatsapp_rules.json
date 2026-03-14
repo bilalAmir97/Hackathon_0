@@ -1,0 +1,92 @@
+{
+  "priority_keywords": [
+    "urgent",
+    "asap",
+    "important",
+    "help",
+    "invoice",
+    "payment",
+    "emergency",
+    "critical",
+    "deadline",
+    "meeting",
+    "call"
+  ],
+  "ignore_senders": [
+    "WhatsApp",
+    "Promotional"
+  ],
+  "sender_rules": {
+    "GIAIC": {
+      "action": "log_only",
+      "auto_respond": false,
+      "response_template": null
+    },
+    "Panaversity": {
+      "action": "log_only",
+      "auto_respond": false,
+      "response_template": null
+    },
+    "Think Velocity": {
+      "action": "log_only",
+      "auto_respond": false,
+      "response_template": null
+    }
+  },
+  "keyword_responses": {
+    "meeting": {
+      "enabled": true,
+      "response": "Thanks for the meeting request. I'll check my calendar and get back to you shortly.",
+      "notify": true
+    },
+    "invoice": {
+      "enabled": false,
+      "response": "Invoice received. I'll process it within 24 hours.",
+      "notify": true
+    },
+    "urgent": {
+      "enabled": true,
+      "response": "I've received your urgent message and will respond as soon as possible.",
+      "notify": true
+    }
+  },
+  "default_actions": {
+    "priority": "notify_and_log",
+    "group": "log_only",
+    "personal": "notify_and_log",
+    "ignored": "archive"
+  },
+  "auto_response_settings": {
+    "enabled": true,
+    "delay_seconds": 60,
+    "only_during_work_hours": false,
+    "work_hours": {
+      "start": "09:00",
+      "end": "18:00",
+      "timezone": "UTC"
+    }
+  },
+  "notification_settings": {
+    "dashboard": true,
+    "email": false,
+    "email_address": null,
+    "priority_only": false
+  },
+  "advanced_rules": {
+    "forward_to_email": {
+      "enabled": false,
+      "conditions": [
+        "priority"
+      ],
+      "email_address": null
+    },
+    "create_approval_request": {
+      "enabled": false,
+      "conditions": [
+        "invoice",
+        "payment"
+      ],
+      "approval_type": "email"
+    }
+  }
+}

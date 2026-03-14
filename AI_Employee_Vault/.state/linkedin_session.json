@@ -1,0 +1,26 @@
+{
+  "cookies": [
+    {
+      "name": "li_at",
+      "value": "AQEDAUzKmZkFwIfdAAABnEGQpgkAAAGcrespwk0AEIWeq6_on7wkBfulh1l6p_cJEjxSH0azaMeOWzwMZBfUsrN29hRB-epXoF2Ujo_ecg1H7LjAFAFHhQ2gd5lk8sDGlNCZsLz7TqDHacY-6VUf07VP",
+      "domain": ".linkedin.com",
+      "path": "/",
+      "expires": 1767225600,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "JSESSIONID",
+      "value": "ajax:AQEDAUzKmZkFwIfd",
+      "domain": ".www.linkedin.com",
+      "path": "/",
+      "expires": 1767225600,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    }
+  ],
+  "saved_at": "2026-02-27T01:20:23.049509",
+  "imported_manually": true
+}

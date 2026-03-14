@@ -1,0 +1,23 @@
+# AI Employee Automation - Cron Schedule
+# Install with: crontab scripts/crontab_entries.txt
+# View with: crontab -l
+
+# Project directory
+SHELL=/bin/bash
+PATH=/home/bilal-amir/.local/bin:/usr/local/bin:/usr/bin:/bin
+PROJECT_DIR=/mnt/d/Bilal/Bilal/Bilal_Data/Hackathon/Hackathon_0
+
+# Daily briefing at 9:00 PM (when user is actively using laptop)
+0 21 * * * cd $PROJECT_DIR && /home/bilal-amir/.local/bin/uv run python scripts/daily_briefing.py >> /tmp/ai-employee-cron.log 2>&1
+
+# Backup: Run briefing on reboot (in case laptop was off/asleep at 9 PM)
+@reboot sleep 90 && cd $PROJECT_DIR && /home/bilal-amir/.local/bin/uv run python scripts/daily_briefing.py >> /tmp/ai-employee-cron.log 2>&1
+
+# Health check every 5 minutes
+*/5 * * * * cd $PROJECT_DIR && /home/bilal-amir/.local/bin/uv run python scripts/health_check.py >> /tmp/ai-employee-cron.log 2>&1
+
+# Weekly audit on Sunday at 11:00 PM
+0 23 * * 0 cd $PROJECT_DIR && bash scripts/rotate_logs.sh >> /tmp/ai-employee-cron.log 2>&1
+
+# PM2 resurrection on reboot (ensures services restart after system reboot)
+@reboot sleep 30 && cd $PROJECT_DIR && pm2 resurrect >> /tmp/ai-employee-cron.log 2>&1
