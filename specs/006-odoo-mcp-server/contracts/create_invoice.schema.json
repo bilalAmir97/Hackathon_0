@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Create Invoice Tool",
+  "description": "MCP tool for creating customer invoices in Odoo (requires approval before finalization)",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "integer",
+      "description": "Odoo partner ID (res.partner)",
+      "minimum": 1
+    },
+    "invoice_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Invoice date in ISO 8601 format (YYYY-MM-DD)",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Payment due date in ISO 8601 format (YYYY-MM-DD). Optional, defaults to invoice_date + 30 days",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "line_items": {
+      "type": "array",
+      "description": "Invoice line items (products/services)",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "integer",
+            "description": "Odoo product ID (product.product)",
+            "minimum": 1
+          },
+          "description": {
+            "type": "string",
+            "description": "Line item description (optional, defaults to product name)",
+            "maxLength": 500
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantity",
+            "minimum": 0.01
+          },
+          "unit_price": {
+            "type": "number",
+            "description": "Price per unit",
+            "minimum": 0
+          }
+        },
+        "required": ["product_id", "quantity", "unit_price"]
+      }
+    },
+    "reference": {
+      "type": "string",
+      "description": "Optional reference/memo for the invoice",
+      "maxLength": 255
+    }
+  },
+  "required": ["customer_id", "invoice_date", "line_items"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "customer_id": 45,
+      "invoice_date": "2026-03-17",
+      "due_date": "2026-04-16",
+      "line_items": [
+        {
+          "product_id": 10,
+          "description": "Consulting Services - Project Alpha",
+          "quantity": 10,
+          "unit_price": 100.00
+        },
+        {
+          "product_id": 15,
+          "description": "Software License - Annual",
+          "quantity": 1,
+          "unit_price": 500.00
+        }
+      ],
+      "reference": "Project Alpha - Phase 1"
+    }
+  ],
+  "response": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": ["approval_required", "error"],
+        "description": "Operation status"
+      },
+      "approval_file": {
+        "type": "string",
+        "description": "Path to approval request file in Pending_Approval/"
+      },
+      "draft_invoice_id": {
+        "type": "integer",
+        "description": "Odoo invoice ID (draft state)"
+      },
+      "total_amount": {
+        "type": "string",
+        "description": "Total invoice amount (masked as '***' in logs)"
+      },
+      "message": {
+        "type": "string",
+        "description": "Human-readable status message"
+      },
+      "error": {
+        "type": "string",
+        "description": "Error message if status is 'error'"
+      }
+    },
+    "required": ["status", "message"]
+  }
+}

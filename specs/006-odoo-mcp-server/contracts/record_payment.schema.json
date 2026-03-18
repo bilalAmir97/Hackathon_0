@@ -1,0 +1,91 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Record Payment Tool",
+  "description": "MCP tool for recording payments against invoices in Odoo (requires approval before recording)",
+  "type": "object",
+  "properties": {
+    "invoice_id": {
+      "type": "integer",
+      "description": "Odoo invoice ID (account.move) - must be in 'posted' state",
+      "minimum": 1
+    },
+    "amount": {
+      "type": "number",
+      "description": "Payment amount (must be > 0 and <= outstanding balance)",
+      "minimum": 0.01
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Payment date in ISO 8601 format (YYYY-MM-DD)",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": ["cash", "bank_transfer", "check", "credit_card"],
+      "description": "Payment method"
+    },
+    "reference": {
+      "type": "string",
+      "description": "Optional payment reference (check number, transaction ID, etc.)",
+      "maxLength": 255
+    }
+  },
+  "required": ["invoice_id", "amount", "payment_date", "payment_method"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "invoice_id": 123,
+      "amount": 500.00,
+      "payment_date": "2026-03-20",
+      "payment_method": "bank_transfer",
+      "reference": "Wire transfer #12345"
+    },
+    {
+      "invoice_id": 124,
+      "amount": 1000.00,
+      "payment_date": "2026-03-21",
+      "payment_method": "check",
+      "reference": "Check #5678"
+    }
+  ],
+  "response": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": ["approval_required", "error"],
+        "description": "Operation status"
+      },
+      "approval_file": {
+        "type": "string",
+        "description": "Path to approval request file in Pending_Approval/"
+      },
+      "invoice_id": {
+        "type": "integer",
+        "description": "Odoo invoice ID"
+      },
+      "amount": {
+        "type": "string",
+        "description": "Payment amount (masked as '***' in logs)"
+      },
+      "outstanding_balance_before": {
+        "type": "string",
+        "description": "Outstanding balance before payment (masked)"
+      },
+      "outstanding_balance_after": {
+        "type": "string",
+        "description": "Outstanding balance after payment (masked)"
+      },
+      "message": {
+        "type": "string",
+        "description": "Human-readable status message"
+      },
+      "error": {
+        "type": "string",
+        "description": "Error message if status is 'error'"
+      }
+    },
+    "required": ["status", "message"]
+  }
+}
