@@ -1,0 +1,192 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Get Financial Report Tool",
+  "description": "MCP tool for retrieving financial summaries and reports (no approval required - read-only)",
+  "type": "object",
+  "properties": {
+    "report_type": {
+      "type": "string",
+      "enum": ["revenue_summary", "receivables", "payment_collection"],
+      "description": "Type of financial report to generate"
+    },
+    "date_from": {
+      "type": "string",
+      "format": "date",
+      "description": "Report start date in ISO 8601 format (YYYY-MM-DD)",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "date_to": {
+      "type": "string",
+      "format": "date",
+      "description": "Report end date in ISO 8601 format (YYYY-MM-DD)",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    }
+  },
+  "required": ["report_type", "date_from", "date_to"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "report_type": "revenue_summary",
+      "date_from": "2026-03-01",
+      "date_to": "2026-03-31"
+    },
+    {
+      "report_type": "receivables",
+      "date_from": "2026-01-01",
+      "date_to": "2026-03-31"
+    },
+    {
+      "report_type": "payment_collection",
+      "date_from": "2026-02-01",
+      "date_to": "2026-02-29"
+    }
+  ],
+  "reportTypes": {
+    "revenue_summary": {
+      "description": "Total revenue, paid amount, and outstanding balance for the period",
+      "fields": [
+        "total_revenue",
+        "paid_amount",
+        "outstanding_balance",
+        "invoice_count",
+        "payment_count"
+      ]
+    },
+    "receivables": {
+      "description": "List of customers with outstanding balances",
+      "fields": [
+        "customers (array)",
+        "total_outstanding",
+        "customer_count"
+      ]
+    },
+    "payment_collection": {
+      "description": "Payment collection metrics and statistics",
+      "fields": [
+        "total_collected",
+        "average_payment_time_days",
+        "collection_rate_percent",
+        "payment_count",
+        "invoice_count"
+      ]
+    }
+  },
+  "response": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": ["success", "error"],
+        "description": "Operation status"
+      },
+      "report_type": {
+        "type": "string",
+        "description": "Type of report generated"
+      },
+      "period": {
+        "type": "string",
+        "description": "Report period (e.g., '2026-03-01 to 2026-03-31')"
+      },
+      "data": {
+        "type": "object",
+        "description": "Report data (structure varies by report_type)",
+        "oneOf": [
+          {
+            "title": "Revenue Summary",
+            "properties": {
+              "total_revenue": {
+                "type": "string",
+                "description": "Total revenue (masked as '***' in logs)"
+              },
+              "paid_amount": {
+                "type": "string",
+                "description": "Total paid amount (masked)"
+              },
+              "outstanding_balance": {
+                "type": "string",
+                "description": "Total outstanding (masked)"
+              },
+              "invoice_count": {
+                "type": "integer",
+                "description": "Number of invoices"
+              },
+              "payment_count": {
+                "type": "integer",
+                "description": "Number of payments"
+              }
+            }
+          },
+          {
+            "title": "Receivables",
+            "properties": {
+              "customers": {
+                "type": "array",
+                "description": "Customers with outstanding balances",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "integer"
+                    },
+                    "customer_name": {
+                      "type": "string"
+                    },
+                    "outstanding_balance": {
+                      "type": "string",
+                      "description": "Masked as '***' in logs"
+                    },
+                    "invoice_count": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "total_outstanding": {
+                "type": "string",
+                "description": "Total outstanding across all customers (masked)"
+              },
+              "customer_count": {
+                "type": "integer",
+                "description": "Number of customers with outstanding balances"
+              }
+            }
+          },
+          {
+            "title": "Payment Collection",
+            "properties": {
+              "total_collected": {
+                "type": "string",
+                "description": "Total amount collected (masked)"
+              },
+              "average_payment_time_days": {
+                "type": "integer",
+                "description": "Average days from invoice to payment"
+              },
+              "collection_rate_percent": {
+                "type": "number",
+                "description": "Percentage of invoices collected"
+              },
+              "payment_count": {
+                "type": "integer",
+                "description": "Number of payments received"
+              },
+              "invoice_count": {
+                "type": "integer",
+                "description": "Number of invoices in period"
+              }
+            }
+          }
+        ]
+      },
+      "message": {
+        "type": "string",
+        "description": "Human-readable status message"
+      },
+      "error": {
+        "type": "string",
+        "description": "Error message if status is 'error'"
+      }
+    },
+    "required": ["status", "message"]
+  }
+}
