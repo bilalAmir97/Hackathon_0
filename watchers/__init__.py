@@ -1,6 +1,7 @@
 """Watcher modules for AI Employee."""
 
-from .base_watcher import BaseWatcher
-from .filesystem_watcher import FileSystemWatcher
+# Import only existing watcher modules
+# base_watcher and filesystem_watcher are not implemented yet
 
-__all__ = ['BaseWatcher', 'FileSystemWatcher']
+__all__ = []
+

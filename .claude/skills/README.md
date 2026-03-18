@@ -1,6 +1,6 @@
-# Silver Tier Skills - Complete Guide
+# AI Employee Agent Skills - Complete Guide
 
-This directory contains all Agent Skills required to build a Silver tier AI Employee.
+This directory contains all Agent Skills for Silver and Gold tier AI Employee implementation.
 
 ## 📚 Skills Overview
 
@@ -382,54 +382,236 @@ Track these metrics to optimize your AI Employee:
 
 ---
 
+---
+
+## 📈 Gold Tier Skills (Advanced)
+
+### Phase 5: Financial Management (Week 5)
+Enterprise accounting and financial automation.
+
+9. **[odoo-accounting](./odoo-accounting/SKILL.md)** ⏱️ 8-10 hours
+   - Odoo Community Edition integration
+   - Invoice creation and management
+   - Payment recording and tracking
+   - Financial reporting and analytics
+   - **Prerequisites**: Odoo 19+, Odoo MCP server, accounting knowledge
+
+**Phase 5 Total**: ~8-10 hours
+
+---
+
+### Phase 6: Social Media Expansion (Week 6)
+Multi-platform social media automation.
+
+10. **[post-facebook-instagram](./post-facebook-instagram/SKILL.md)** ⏱️ 6-8 hours
+    - Facebook Business Account integration
+    - Instagram Business Account integration
+    - Automatic posting to both platforms
+    - Engagement tracking and analytics
+    - **Prerequisites**: Facebook/Instagram Business accounts, Graph API
+
+11. **[post-twitter](./post-twitter/SKILL.md)** ⏱️ 5-7 hours
+    - Twitter/X API v2 integration
+    - Tweet and thread posting
+    - Mention monitoring and response
+    - Engagement analytics
+    - **Prerequisites**: Twitter Developer Account, API v2 access
+
+**Phase 6 Total**: ~11-15 hours
+
+---
+
+### Phase 7: Business Intelligence (Week 7)
+Automated reporting and insights.
+
+12. **[weekly-business-audit](./weekly-business-audit/SKILL.md)** ⏱️ 6-8 hours
+    - Automated weekly business audit
+    - CEO briefing generation
+    - Financial analysis from Odoo
+    - Social media performance aggregation
+    - Proactive recommendations
+    - **Prerequisites**: All data sources integrated, Business_Goals.md
+
+**Phase 7 Total**: ~6-8 hours
+
+---
+
+### Phase 8: Production Readiness (Week 8)
+Enterprise-grade reliability and compliance.
+
+13. **[audit-logging](./audit-logging/SKILL.md)** ⏱️ 4-6 hours
+    - Comprehensive action logging
+    - Sensitive data masking
+    - Log integrity verification
+    - Encryption at rest (AES-256)
+    - GDPR and SOC 2 compliance
+    - **Prerequisites**: All skills operational, security knowledge
+
+14. **[error-recovery](./error-recovery/SKILL.md)** ⏱️ 5-7 hours
+    - Automatic error recovery
+    - Circuit breaker pattern
+    - Graceful degradation
+    - Health monitoring
+    - Auto-restart failed services
+    - **Prerequisites**: All services running, PM2 configured
+
+**Phase 8 Total**: ~9-13 hours
+
+---
+
+## 🎯 Gold Tier Requirements Checklist
+
+- [x] All Silver requirements
+- [x] Full cross-domain integration (Personal + Business)
+- [x] Odoo accounting system with MCP server
+- [x] Facebook and Instagram integration
+- [x] Twitter (X) integration
+- [x] Multiple MCP servers (Email, Odoo, Social Media, Twitter)
+- [x] Weekly Business Audit with CEO Briefing
+- [x] Error recovery and graceful degradation
+- [x] Comprehensive audit logging
+- [x] Ralph Wiggum loop for autonomous completion
+- [x] Documentation of architecture
+- [x] All AI functionality as Agent Skills
+
+**Total Estimated Time**: 60-73 hours (within 40+ hour estimate)
+
+---
+
+## 📊 Complete Skills Overview
+
+### Silver Tier (8 Skills)
+1. monitor-gmail
+2. send-email
+3. process-emails
+4. approve-actions
+5. monitor-whatsapp
+6. schedule-tasks
+7. reasoning-loop (ralph-loop)
+8. post-linkedin
+
+### Gold Tier (6 Skills)
+9. odoo-accounting
+10. post-facebook-instagram
+11. post-twitter
+12. weekly-business-audit
+13. audit-logging
+14. error-recovery
+
+### Supporting Skills (2 Skills)
+15. browsing-with-playwright
+16. reasoning-loop
+
+**Total Skills**: 16
+**Total Estimated Time**: 60-73 hours
+
+---
+
+## 🏗️ Complete System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    EXTERNAL SOURCES                         │
+├─────────────┬─────────────┬─────────────┬──────────────────┤
+│   Gmail     │  WhatsApp   │ Social Media│  Odoo Accounting │
+└──────┬──────┴──────┬──────┴──────┬──────┴────┬─────────────┘
+       │             │              │           │
+       ▼             ▼              ▼           ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  PERCEPTION LAYER (Watchers)                │
+│  Gmail Watcher │ WhatsApp Watcher │ LinkedIn Poster         │
+│  (PM2 24/7)    │ (PM2 24/7)       │ (PM2 24/7)             │
+└────────────────────────────┬────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│              OBSIDIAN VAULT (Local Storage)                 │
+│  /Needs_Action │ /Pending_Approval │ /Approved │ /Done      │
+│  Dashboard.md  │ Company_Handbook.md │ Business_Goals.md    │
+└────────────────────────────┬────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  REASONING LAYER                            │
+│                    CLAUDE CODE                              │
+│  Read → Analyze → Plan → Create Approval Request           │
+└────────────────────────────┬────────────────────────────────┘
+                             │
+              ┌──────────────┴───────────────┐
+              ▼                              ▼
+┌──────────────────────────┐    ┌───────────────────────────┐
+│  HUMAN-IN-THE-LOOP       │    │    ACTION LAYER           │
+│  Review & Approve        │───▶│    MCP SERVERS            │
+│  Pending_Approval/       │    │  • Email MCP              │
+└──────────────────────────┘    │  • Odoo MCP               │
+                                │  • Social Media MCP       │
+                                │  • Twitter MCP            │
+                                └──────────┬────────────────┘
+                                           │
+                                           ▼
+                                ┌──────────────────────────┐
+                                │  EXTERNAL ACTIONS        │
+                                │  Send Email │ Post Social│
+                                │  Create Invoice │ Record │
+                                └──────────────────────────┘
+                                           │
+                                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│              MONITORING & RECOVERY LAYER                    │
+│  Audit Logging │ Error Recovery │ Health Checks            │
+│  (All actions logged, auto-recovery on failures)           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🎯 MCP Servers Configuration
+
+All MCP servers configured in `.claude/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "email": {
+      "command": "uv",
+      "args": ["run", "python", "mcp_servers/email_mcp_server.py"]
+    },
+    "odoo": {
+      "command": "uv",
+      "args": ["run", "python", "mcp_servers/odoo_mcp_server.py"]
+    },
+    "social-media": {
+      "command": "uv",
+      "args": ["run", "python", "mcp_servers/social_media_mcp_server.py"]
+    },
+    "twitter": {
+      "command": "uv",
+      "args": ["run", "python", "mcp_servers/twitter_mcp_server.py"]
+    }
+  }
+}
+```
+
+---
+
 ## 📈 Upgrade Path to Gold Tier
 
-After completing Silver tier, upgrade to Gold by adding:
+## 🚀 Upgrade Path to Platinum Tier
 
-1. **Odoo Integration** - Accounting system with MCP
-2. **Facebook/Instagram** - Social media integration
-3. **Twitter/X** - Additional social platform
-4. **Weekly CEO Briefing** - Business audit automation
-5. **Error Recovery** - Graceful degradation
-6. **Comprehensive Logging** - Full audit trail
-7. **Multi-Step Autonomy** - Advanced reasoning loops
+After completing Gold tier, upgrade to Platinum by adding:
 
----
-
-## 🎓 Learning Resources
-
-- [Gmail API Documentation](https://developers.google.com/gmail/api)
-- [MCP Protocol Docs](https://modelcontextprotocol.io)
-- [Playwright Documentation](https://playwright.dev)
-- [PM2 Documentation](https://pm2.keymetrics.io)
-- [Claude Code Hooks](https://github.com/anthropics/claude-code)
-- [Agent Skills Guide](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview)
-
----
-
-## 💡 Tips for Success
-
-1. **Start Small** - Test each skill individually before combining
-2. **Use Dry Run** - Set DRY_RUN=true while testing
-3. **Monitor Logs** - Check logs regularly for issues
-4. **Iterate Quickly** - Make small changes and test
-5. **Document Changes** - Keep notes on customizations
-6. **Backup Regularly** - Backup vault and credentials
-7. **Ask for Help** - Join Wednesday research meetings
-
----
-
-## 🤝 Support
-
-- **Weekly Meetings**: Wednesdays 10 PM on Zoom
-- **GitHub Issues**: Report bugs and request features
-- **Documentation**: Refer to individual SKILL.md files
-- **Community**: Share learnings with other participants
+1. **Cloud Deployment** - Deploy to Oracle Cloud Free VM or AWS
+2. **Work-Zone Specialization** - Cloud handles drafts, Local handles approvals
+3. **Vault Synchronization** - Git-based sync between cloud and local
+4. **Security Hardening** - Secrets never sync to cloud
+5. **Odoo Cloud Deployment** - 24/7 Odoo with HTTPS and backups
+6. **Advanced Multi-Agent** - Cloud and Local agents coordinate via files
 
 ---
 
 **Created**: 2026-02-19
-**Version**: 1.0
-**Tier**: Silver
-**Total Skills**: 8
-**Estimated Completion**: 26-33 hours
+**Updated**: 2026-03-14
+**Version**: 2.0
+**Tier**: Gold (Complete)
+**Total Skills**: 16
+**Estimated Completion**: 60-73 hours

@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, List
+from scripts.audit_logger import AuditLogger
 
 
 class DailyBriefing:
@@ -24,6 +25,7 @@ class DailyBriefing:
         self.done = self.vault_path / "Done"
         self.logs = self.vault_path / "Logs"
         self.dashboard = self.vault_path / "Dashboard.md"
+        self.audit_logger = AuditLogger()
 
     def count_pending_tasks(self) -> Dict[str, int]:
         """Count pending tasks by type"""
@@ -163,6 +165,16 @@ class DailyBriefing:
         filepath = briefing_dir / filename
 
         filepath.write_text(content)
+
+        # Log briefing generation
+        self.audit_logger.log_action(
+            action_type="briefing_generate",
+            actor="daily_briefing",
+            target=str(filepath),
+            parameters={"filename": filename},
+            result="success"
+        )
+
         print(f"✓ Briefing saved: {filepath}")
 
         # Also update Dashboard

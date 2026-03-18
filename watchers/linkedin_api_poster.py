@@ -28,6 +28,10 @@ if str(project_root) not in sys.path:
 from dotenv import load_dotenv
 load_dotenv()
 
+# Import audit logger
+from scripts.audit_logger import AuditLogger
+from scripts.error_recovery.decorators import with_retry, with_circuit_breaker
+
 
 class LinkedInAPIAuth:
     """Handle LinkedIn OAuth 2.0 authentication."""
@@ -55,6 +59,8 @@ class LinkedInAPIAuth:
         )
         return auth_url
 
+    @with_retry(max_attempts=3, base_delay=2.0)
+    @with_circuit_breaker(service_name='linkedin_api')
     def exchange_code_for_token(self, auth_code: str) -> str:
         """Exchange authorization code for access token."""
         token_url = "https://www.linkedin.com/oauth/v2/accessToken"
@@ -141,6 +147,9 @@ class LinkedInAPIPoster:
             ]
         )
         self.logger = logging.getLogger(__name__)
+
+        # Initialize audit logger
+        self.audit_logger = AuditLogger()
 
         self.auth = LinkedInAPIAuth()
         self.access_token = None
@@ -335,6 +344,8 @@ class LinkedInAPIPoster:
                 self.logger.error(f"Response: {e.response.text}")
             return None
 
+    @with_retry(max_attempts=3, base_delay=2.0)
+    @with_circuit_breaker(service_name='linkedin_api')
     def create_post(self, content: str, media_urns: list = None, media_type: str = "NONE") -> Optional[str]:
         """Create a LinkedIn post using API with optional media."""
         try:
@@ -379,12 +390,51 @@ class LinkedInAPIPoster:
             post_id = response.headers.get('X-RestLi-Id')
             self.logger.info(f"✅ Post created successfully! ID: {post_id}")
 
+            # Log successful social media post
+            self.audit_logger.log_action(
+                action_type="social_post",
+                actor="linkedin_api_poster",
+                target="linkedin",
+                parameters={
+                    "platform": "LinkedIn",
+                    "content_preview": content[:200] if len(content) > 200 else content,
+                    "content_length": len(content),
+                    "media_count": len(media_urns) if media_urns else 0,
+                    "media_type": media_type,
+                    "post_id": post_id
+                },
+                result="success",
+                metadata={
+                    "linkedin_post_id": post_id,
+                    "visibility": "PUBLIC"
+                }
+            )
+            self.audit_logger.flush()
+
             return post_id
 
         except Exception as e:
             self.logger.error(f"Failed to create post: {e}")
             if hasattr(e, 'response'):
                 self.logger.error(f"Response: {e.response.text}")
+
+            # Log failed social media post
+            self.audit_logger.log_action(
+                action_type="social_post",
+                actor="linkedin_api_poster",
+                target="linkedin",
+                parameters={
+                    "platform": "LinkedIn",
+                    "content_preview": content[:200] if len(content) > 200 else content,
+                    "content_length": len(content),
+                    "media_count": len(media_urns) if media_urns else 0,
+                    "media_type": media_type
+                },
+                result="failure",
+                error=f"LinkedIn API error: {str(e)}"
+            )
+            self.audit_logger.flush()
+
             return None
 
     def parse_post_file(self, file_path: Path) -> Optional[Dict]:

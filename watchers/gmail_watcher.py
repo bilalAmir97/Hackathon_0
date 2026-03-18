@@ -21,6 +21,8 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 from watchers.gmail_state import GmailState, load_config
+from scripts.audit_logger import AuditLogger
+from scripts.error_recovery.decorators import with_retry, with_circuit_breaker
 
 
 class GmailWatcher:
@@ -68,6 +70,11 @@ class GmailWatcher:
         self.credentials: Optional[Credentials] = None
         self.service = None
 
+        # Initialize audit logger
+        self.audit_logger = AuditLogger()
+
+    @with_retry(max_attempts=3, base_delay=2.0)
+    @with_circuit_breaker(service_name='gmail_api')
     def authenticate(self):
         """Authenticate with Gmail API using OAuth token.
 
@@ -99,6 +106,15 @@ class GmailWatcher:
 
         # Build Gmail service
         self.service = build('gmail', 'v1', credentials=self.credentials)
+
+        # Log successful authentication
+        self.audit_logger.log_action(
+            action_type="watcher_authenticate",
+            actor="gmail_watcher",
+            target="gmail_api",
+            parameters={"service": "gmail"},
+            result="success"
+        )
 
     def _is_priority(self, email: Dict[str, Any]) -> bool:
         """Check if email contains priority keywords.
@@ -249,8 +265,24 @@ status: pending
         # Mark as processed
         self.state.mark_processed(email_id)
 
+        # Log action file creation
+        self.audit_logger.log_action(
+            action_type="email_receive",
+            actor="gmail_watcher",
+            target=from_addr,
+            parameters={
+                "subject": subject,
+                "email_id": email_id,
+                "action_file": filename
+            },
+            result="success",
+            metadata={"thread_id": thread_id}
+        )
+
         print(f"✅ Created action item: {filename}")
 
+    @with_retry(max_attempts=5, base_delay=1.0)
+    @with_circuit_breaker(service_name='gmail_api')
     def check_for_updates(self):
         """Poll Gmail for new unread emails.
 
@@ -318,6 +350,17 @@ status: pending
         except (ConnectionError, TimeoutError) as e:
             # Network error - queue operation for later
             print(f"⚠️ Network error: {e}")
+
+            # Log network error
+            self.audit_logger.log_action(
+                action_type="watcher_poll",
+                actor="gmail_watcher",
+                target="gmail_api",
+                parameters={"operation": "check_updates"},
+                result="failure",
+                error=f"Network error: {str(e)}"
+            )
+
             operation = {
                 'type': 'poll',
                 'timestamp': datetime.utcnow().isoformat() + 'Z'
@@ -335,6 +378,17 @@ status: pending
                 'error_message': str(e)
             }
             self.state.save()
+
+            # Log error to audit trail
+            self.audit_logger.log_action(
+                action_type="watcher_poll",
+                actor="gmail_watcher",
+                target="gmail_api",
+                parameters={"operation": "check_updates"},
+                result="failure",
+                error=f"{type(e).__name__}: {str(e)}",
+                metadata={"error_count": self.state.error_count}
+            )
 
             print(f"❌ Error checking for updates: {str(e)}")
 

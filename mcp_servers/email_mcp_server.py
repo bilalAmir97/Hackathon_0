@@ -5,6 +5,7 @@ using the existing Gmail OAuth credentials.
 """
 
 import os
+import sys
 import base64
 import json
 from pathlib import Path
@@ -19,12 +20,30 @@ from googleapiclient.errors import HttpError
 from mcp.server import Server
 from mcp.types import Tool, TextContent
 
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from scripts.audit_logger import AuditLogger
+
 
 # Initialize MCP server
 app = Server("email-mcp-server")
 
 # Gmail service (initialized on first use)
 _gmail_service = None
+
+# Audit logger (initialized on first use)
+_audit_logger = None
+
+
+def get_audit_logger():
+    """Get or create AuditLogger instance."""
+    global _audit_logger
+
+    if _audit_logger is not None:
+        return _audit_logger
+
+    _audit_logger = AuditLogger()
+    return _audit_logger
 
 
 def get_gmail_service():
@@ -178,6 +197,8 @@ async def send_email(
 ) -> list[TextContent]:
     """Send an email via Gmail API."""
 
+    audit_logger = get_audit_logger()
+
     try:
         service = get_gmail_service()
 
@@ -203,6 +224,25 @@ async def send_email(
             body={'raw': raw_message}
         ).execute()
 
+        # Log successful email send
+        audit_logger.log_action(
+            action_type="email_send",
+            actor="email_mcp",
+            target=to,
+            parameters={
+                "subject": subject,
+                "body_preview": body[:100] if len(body) > 100 else body,
+                "cc": cc,
+                "bcc": bcc,
+                "message_id": result['id']
+            },
+            result="success",
+            metadata={
+                "gmail_message_id": result['id']
+            }
+        )
+        audit_logger.flush()
+
         return [TextContent(
             type="text",
             text=json.dumps({
@@ -214,6 +254,22 @@ async def send_email(
         )]
 
     except HttpError as e:
+        # Log failed email send
+        audit_logger.log_action(
+            action_type="email_send",
+            actor="email_mcp",
+            target=to,
+            parameters={
+                "subject": subject,
+                "body_preview": body[:100] if len(body) > 100 else body,
+                "cc": cc,
+                "bcc": bcc
+            },
+            result="failure",
+            error=f"Gmail API error: {str(e)}"
+        )
+        audit_logger.flush()
+
         return [TextContent(
             type="text",
             text=json.dumps({
@@ -230,6 +286,8 @@ async def draft_email(
     body: str
 ) -> list[TextContent]:
     """Create a draft email in Gmail."""
+
+    audit_logger = get_audit_logger()
 
     try:
         service = get_gmail_service()
@@ -248,6 +306,23 @@ async def draft_email(
             body={'message': {'raw': raw_message}}
         ).execute()
 
+        # Log successful draft creation
+        audit_logger.log_action(
+            action_type="email_draft",
+            actor="email_mcp",
+            target=to,
+            parameters={
+                "subject": subject,
+                "body_preview": body[:100] if len(body) > 100 else body,
+                "draft_id": result['id']
+            },
+            result="success",
+            metadata={
+                "gmail_draft_id": result['id']
+            }
+        )
+        audit_logger.flush()
+
         return [TextContent(
             type="text",
             text=json.dumps({
@@ -260,6 +335,20 @@ async def draft_email(
         )]
 
     except HttpError as e:
+        # Log failed draft creation
+        audit_logger.log_action(
+            action_type="email_draft",
+            actor="email_mcp",
+            target=to,
+            parameters={
+                "subject": subject,
+                "body_preview": body[:100] if len(body) > 100 else body
+            },
+            result="failure",
+            error=f"Gmail API error: {str(e)}"
+        )
+        audit_logger.flush()
+
         return [TextContent(
             type="text",
             text=json.dumps({
@@ -275,6 +364,8 @@ async def search_emails(
 ) -> list[TextContent]:
     """Search Gmail messages."""
 
+    audit_logger = get_audit_logger()
+
     try:
         service = get_gmail_service()
 
@@ -288,6 +379,20 @@ async def search_emails(
         messages = results.get('messages', [])
 
         if not messages:
+            # Log successful search with no results
+            audit_logger.log_action(
+                action_type="email_search",
+                actor="email_mcp",
+                target="gmail",
+                parameters={
+                    "query": query,
+                    "max_results": max_results,
+                    "results_count": 0
+                },
+                result="success"
+            )
+            audit_logger.flush()
+
             return [TextContent(
                 type="text",
                 text=json.dumps({
@@ -316,6 +421,23 @@ async def search_emails(
                 "date": headers.get('Date', 'Unknown')
             })
 
+        # Log successful search with results
+        audit_logger.log_action(
+            action_type="email_search",
+            actor="email_mcp",
+            target="gmail",
+            parameters={
+                "query": query,
+                "max_results": max_results,
+                "results_count": len(message_details)
+            },
+            result="success",
+            metadata={
+                "message_ids": [msg['id'] for msg in message_details]
+            }
+        )
+        audit_logger.flush()
+
         return [TextContent(
             type="text",
             text=json.dumps({
@@ -326,6 +448,20 @@ async def search_emails(
         )]
 
     except HttpError as e:
+        # Log failed search
+        audit_logger.log_action(
+            action_type="email_search",
+            actor="email_mcp",
+            target="gmail",
+            parameters={
+                "query": query,
+                "max_results": max_results
+            },
+            result="failure",
+            error=f"Gmail API error: {str(e)}"
+        )
+        audit_logger.flush()
+
         return [TextContent(
             type="text",
             text=json.dumps({

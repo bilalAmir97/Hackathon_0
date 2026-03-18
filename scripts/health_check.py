@@ -11,6 +11,9 @@ import subprocess
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List
+from scripts.audit_logger import AuditLogger
+from scripts.error_recovery.recovery_state import RecoveryState
+from scripts.error_recovery.service_health import ServiceHealth
 
 
 class HealthCheck:
@@ -21,6 +24,7 @@ class HealthCheck:
         self.logs = self.vault_path / "Logs"
         self.needs_action = self.vault_path / "Needs_Action"
         self.health_log = self.logs / "health_checks.json"
+        self.audit_logger = AuditLogger()
 
     def check_watchers(self) -> Dict:
         """Check if watcher processes are running"""
@@ -175,6 +179,169 @@ class HealthCheck:
                 "error": str(e)
             }
 
+    def check_circuit_breakers(self) -> Dict:
+        """Check circuit breaker states for all services"""
+        try:
+            # Load recovery state
+            recovery_state = RecoveryState.load()
+
+            circuit_breakers = recovery_state.circuit_breakers
+
+            if not circuit_breakers:
+                return {
+                    "status": "healthy",
+                    "message": "No circuit breakers registered",
+                    "open_circuits": [],
+                    "half_open_circuits": []
+                }
+
+            open_circuits = []
+            half_open_circuits = []
+
+            for service_name, cb_state in circuit_breakers.items():
+                state = cb_state.get("state", "CLOSED")
+                if state == "OPEN":
+                    open_circuits.append({
+                        "service": service_name,
+                        "failure_count": cb_state.get("failure_count", 0),
+                        "last_failure": cb_state.get("last_failure_time")
+                    })
+                elif state == "HALF_OPEN":
+                    half_open_circuits.append({
+                        "service": service_name,
+                        "failure_count": cb_state.get("failure_count", 0)
+                    })
+
+            # Determine status
+            if open_circuits:
+                status = "critical"
+            elif half_open_circuits:
+                status = "warning"
+            else:
+                status = "healthy"
+
+            return {
+                "status": status,
+                "total_circuits": len(circuit_breakers),
+                "open_circuits": open_circuits,
+                "half_open_circuits": half_open_circuits,
+                "open_count": len(open_circuits),
+                "half_open_count": len(half_open_circuits)
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "error": str(e)
+            }
+
+    def check_service_degradation(self) -> Dict:
+        """Check for degraded services"""
+        try:
+            # Load service health
+            service_health = ServiceHealth.load()
+
+            services = service_health.services
+
+            if not services:
+                return {
+                    "status": "healthy",
+                    "message": "No services registered",
+                    "degraded_services": []
+                }
+
+            degraded_services = []
+            critical_degraded = []
+
+            for service_name, health_data in services.items():
+                health_status = health_data.get("health_status", "HEALTHY")
+                is_critical = health_data.get("is_critical", False)
+
+                if health_status == "DEGRADED":
+                    service_info = {
+                        "service": service_name,
+                        "is_critical": is_critical,
+                        "consecutive_failures": health_data.get("consecutive_failures", 0),
+                        "last_check": health_data.get("last_check_time")
+                    }
+                    degraded_services.append(service_info)
+
+                    if is_critical:
+                        critical_degraded.append(service_info)
+
+            # Determine status
+            if critical_degraded:
+                status = "critical"
+            elif degraded_services:
+                status = "warning"
+            else:
+                status = "healthy"
+
+            return {
+                "status": status,
+                "total_services": len(services),
+                "degraded_services": degraded_services,
+                "degraded_count": len(degraded_services),
+                "critical_degraded_count": len(critical_degraded)
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "error": str(e)
+            }
+
+    def check_restart_attempts(self) -> Dict:
+        """Check for excessive restart attempts"""
+        try:
+            # Load service health
+            service_health = ServiceHealth.load()
+
+            services = service_health.services
+
+            if not services:
+                return {
+                    "status": "healthy",
+                    "message": "No services registered",
+                    "services_with_restarts": []
+                }
+
+            services_with_restarts = []
+            excessive_restarts = []
+
+            for service_name, health_data in services.items():
+                restart_count = health_data.get("restart_count", 0)
+
+                if restart_count > 0:
+                    service_info = {
+                        "service": service_name,
+                        "restart_count": restart_count,
+                        "last_restart": health_data.get("last_restart_time")
+                    }
+                    services_with_restarts.append(service_info)
+
+                    # Threshold: more than 3 restarts is excessive
+                    if restart_count > 3:
+                        excessive_restarts.append(service_info)
+
+            # Determine status
+            if excessive_restarts:
+                status = "critical"
+            elif services_with_restarts:
+                status = "warning"
+            else:
+                status = "healthy"
+
+            return {
+                "status": status,
+                "services_with_restarts": services_with_restarts,
+                "restart_count": len(services_with_restarts),
+                "excessive_restart_count": len(excessive_restarts)
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "error": str(e)
+            }
+
     def run_health_check(self) -> Dict:
         """Run all health checks"""
         checks = {
@@ -183,7 +350,10 @@ class HealthCheck:
             "disk": self.check_disk_space(),
             "queue": self.check_pending_queue(),
             "activity": self.check_recent_activity(),
-            "daily_briefing": self.check_and_run_daily_briefing()
+            "daily_briefing": self.check_and_run_daily_briefing(),
+            "circuit_breakers": self.check_circuit_breakers(),
+            "service_degradation": self.check_service_degradation(),
+            "restart_attempts": self.check_restart_attempts()
         }
 
         # Determine overall status
@@ -191,7 +361,10 @@ class HealthCheck:
             checks["watchers"]["status"],
             checks["disk"]["status"],
             checks["queue"]["status"],
-            checks["activity"]["status"]
+            checks["activity"]["status"],
+            checks["circuit_breakers"]["status"],
+            checks["service_degradation"]["status"],
+            checks["restart_attempts"]["status"]
         ]
 
         if "error" in statuses or "critical" in statuses:
@@ -200,6 +373,22 @@ class HealthCheck:
             checks["overall_status"] = "warning"
         else:
             checks["overall_status"] = "healthy"
+
+        # Log health check to audit trail
+        self.audit_logger.log_action(
+            action_type="health_check",
+            actor="health_check",
+            target="system",
+            parameters={
+                "overall_status": checks["overall_status"],
+                "watchers_running": checks["watchers"].get("running_count", 0),
+                "pending_count": checks["queue"].get("pending_count", 0),
+                "open_circuits": checks["circuit_breakers"].get("open_count", 0),
+                "degraded_services": checks["service_degradation"].get("degraded_count", 0),
+                "restart_attempts": checks["restart_attempts"].get("restart_count", 0)
+            },
+            result="success" if checks["overall_status"] == "healthy" else "warning"
+        )
 
         return checks
 
@@ -255,7 +444,35 @@ created: {checks['timestamp']}
             if checks["activity"]["status"] != "healthy":
                 content += f"- **Activity**: {checks['activity'].get('message', 'Low activity')}\n"
 
-            content += "\n### Action Required\n\nReview system logs and restart failed components.\n"
+            # Add circuit breaker issues
+            if checks["circuit_breakers"]["status"] != "healthy":
+                open_count = checks["circuit_breakers"].get("open_count", 0)
+                half_open_count = checks["circuit_breakers"].get("half_open_count", 0)
+                content += f"- **Circuit Breakers**: {open_count} OPEN, {half_open_count} HALF_OPEN\n"
+
+                for circuit in checks["circuit_breakers"].get("open_circuits", []):
+                    content += f"  - {circuit['service']}: {circuit['failure_count']} failures\n"
+
+            # Add service degradation issues
+            if checks["service_degradation"]["status"] != "healthy":
+                degraded_count = checks["service_degradation"].get("degraded_count", 0)
+                critical_count = checks["service_degradation"].get("critical_degraded_count", 0)
+                content += f"- **Service Degradation**: {degraded_count} degraded ({critical_count} critical)\n"
+
+                for service in checks["service_degradation"].get("degraded_services", []):
+                    critical_marker = " [CRITICAL]" if service["is_critical"] else ""
+                    content += f"  - {service['service']}{critical_marker}: {service['consecutive_failures']} consecutive failures\n"
+
+            # Add restart attempt issues
+            if checks["restart_attempts"]["status"] != "healthy":
+                restart_count = checks["restart_attempts"].get("restart_count", 0)
+                excessive_count = checks["restart_attempts"].get("excessive_restart_count", 0)
+                content += f"- **Restart Attempts**: {restart_count} services restarted ({excessive_count} excessive)\n"
+
+                for service in checks["restart_attempts"].get("services_with_restarts", []):
+                    content += f"  - {service['service']}: {service['restart_count']} restarts\n"
+
+            content += "\n### Action Required\n\nReview system logs and restart failed components. Check circuit breaker states and service health.\n"
 
             alert_file.write_text(content)
             print(f"⚠️  Alert created: {alert_file.name}")

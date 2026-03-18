@@ -39,6 +39,189 @@ class TestApprovalExecutorFolderMonitoring:
         # (This will be implemented with watchdog)
         assert moved_file.exists()
 
+
+# ============================================================================
+# Odoo Invoice Finalization Tests (T059)
+# ============================================================================
+
+class TestApprovalExecutorInvoiceFinalization:
+    """Test invoice finalization via approval workflow."""
+
+    def test_execute_invoice_finalize_success(self, tmp_path):
+        """Test successful invoice finalization (T059)."""
+        from scripts.approval_executor import ApprovalExecutor
+
+        vault_path = tmp_path / "vault"
+        vault_path.mkdir()
+
+        # Mock AuditLogger and OdooClient at the module where they're used
+        with patch('scripts.approval_executor.AuditLogger') as MockAuditLogger, \
+             patch('scripts.approval_executor.OdooClient') as MockOdooClient:
+
+            mock_audit = MockAuditLogger.return_value
+            executor = ApprovalExecutor(vault_path=str(vault_path))
+
+            mock_client = MockOdooClient.return_value
+            mock_client.authenticate.return_value = 2
+            mock_client.finalize_invoice.return_value = True
+
+            approval_data = {
+                'approval_id': 'approval_20260317_143022_invoice',
+                'operation': 'invoice',
+                'invoice_id': 100
+            }
+
+            result = executor.execute_invoice_finalize(approval_data)
+
+            assert result['status'] == 'success'
+            assert result['invoice_id'] == 100
+            mock_client.finalize_invoice.assert_called_once_with(100)
+
+    def test_execute_invoice_finalize_missing_invoice_id(self, tmp_path):
+        """Test invoice finalization with missing invoice ID."""
+        from scripts.approval_executor import ApprovalExecutor
+
+        vault_path = tmp_path / "vault"
+        vault_path.mkdir()
+
+        with patch('scripts.approval_executor.AuditLogger'):
+            executor = ApprovalExecutor(vault_path=str(vault_path))
+
+            approval_data = {
+                'approval_id': 'approval_test',
+                'operation': 'invoice'
+                # Missing invoice_id
+            }
+
+            result = executor.execute_invoice_finalize(approval_data)
+
+            assert result['status'] == 'error'
+            assert 'Invoice ID not found' in result['error']
+
+    def test_execute_invoice_finalize_odoo_error(self, tmp_path):
+        """Test invoice finalization with Odoo error."""
+        from scripts.approval_executor import ApprovalExecutor
+
+        vault_path = tmp_path / "vault"
+        vault_path.mkdir()
+
+        with patch('scripts.approval_executor.AuditLogger') as MockAuditLogger, \
+             patch('scripts.approval_executor.OdooClient') as MockOdooClient:
+
+            executor = ApprovalExecutor(vault_path=str(vault_path))
+
+            mock_client = MockOdooClient.return_value
+            mock_client.authenticate.return_value = 2
+            mock_client.finalize_invoice.side_effect = ValueError("Invoice not found")
+
+            approval_data = {
+                'approval_id': 'approval_test',
+                'operation': 'invoice',
+                'invoice_id': 99999
+            }
+
+            result = executor.execute_invoice_finalize(approval_data)
+
+            assert result['status'] == 'error'
+            assert 'not found' in result['error'].lower()
+
+
+# ============================================================================
+# Odoo Payment Recording Tests (T089)
+# ============================================================================
+
+class TestApprovalExecutorPaymentRecording:
+    """Test payment recording via approval workflow."""
+
+    def test_execute_payment_record_success(self, tmp_path):
+        """Test successful payment recording (T089)."""
+        from scripts.approval_executor import ApprovalExecutor
+
+        vault_path = tmp_path / "vault"
+        vault_path.mkdir()
+
+        # Mock AuditLogger and OdooClient
+        with patch('scripts.approval_executor.AuditLogger') as MockAuditLogger, \
+             patch('scripts.approval_executor.OdooClient') as MockOdooClient:
+
+            mock_audit = MockAuditLogger.return_value
+            executor = ApprovalExecutor(vault_path=str(vault_path))
+
+            mock_client = MockOdooClient.return_value
+            mock_client.authenticate.return_value = 2
+            mock_client.record_payment.return_value = 500
+
+            approval_data = {
+                'approval_id': 'approval_20260317_143022_payment',
+                'operation': 'payment',
+                'invoice_id': 100,
+                'amount': 200.00,
+                'payment_date': '2026-03-17',
+                'payment_method': 'bank'
+            }
+
+            result = executor.execute_payment_record(approval_data)
+
+            assert result['status'] == 'success'
+            assert result['payment_id'] == 500
+            mock_client.record_payment.assert_called_once()
+
+    def test_execute_payment_record_missing_data(self, tmp_path):
+        """Test payment recording with missing required data."""
+        from scripts.approval_executor import ApprovalExecutor
+
+        vault_path = tmp_path / "vault"
+        vault_path.mkdir()
+
+        with patch('scripts.approval_executor.AuditLogger'):
+            executor = ApprovalExecutor(vault_path=str(vault_path))
+
+            approval_data = {
+                'approval_id': 'approval_test',
+                'operation': 'payment',
+                'invoice_id': 100
+                # Missing amount, payment_date, payment_method
+            }
+
+            result = executor.execute_payment_record(approval_data)
+
+            assert result['status'] == 'error'
+            assert 'required' in result['error'].lower()
+
+    def test_execute_payment_record_odoo_error(self, tmp_path):
+        """Test payment recording with Odoo error."""
+        from scripts.approval_executor import ApprovalExecutor
+
+        vault_path = tmp_path / "vault"
+        vault_path.mkdir()
+
+        with patch('scripts.approval_executor.AuditLogger') as MockAuditLogger, \
+             patch('scripts.approval_executor.OdooClient') as MockOdooClient:
+
+            executor = ApprovalExecutor(vault_path=str(vault_path))
+
+            mock_client = MockOdooClient.return_value
+            mock_client.authenticate.return_value = 2
+            mock_client.record_payment.side_effect = ValueError("Invoice not posted")
+
+            approval_data = {
+                'approval_id': 'approval_test',
+                'operation': 'payment',
+                'invoice_id': 100,
+                'amount': 200.00,
+                'payment_date': '2026-03-17',
+                'payment_method': 'bank'
+            }
+
+            result = executor.execute_payment_record(approval_data)
+
+            assert result['status'] == 'error'
+            assert 'not posted' in result['error'].lower()
+
+
+class TestApprovalExecutorFolderMonitoringContinued:
+    """Test watchdog detects file movements to Approved/Rejected."""
+
     def test_detects_file_moved_to_approved(self, tmp_path):
         """Test that executor detects files moved to Approved."""
         from scripts.approval_executor import ApprovalExecutor

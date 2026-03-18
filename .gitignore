@@ -49,3 +49,10 @@ AI_Employee_Vault/.archive/
 docs/archive/
 tests/archive/
 watchers/archive/
+
+# Audit Logging (Gold Tier)
+AI_Employee_Vault/Logs/*.jsonl
+AI_Employee_Vault/Logs/*.jsonl.gz
+AI_Employee_Vault/Logs/.encryption_key
+AI_Employee_Vault/Logs/.checksums.json
+AI_Employee_Vault/Logs/archive/
