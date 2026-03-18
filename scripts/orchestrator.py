@@ -19,6 +19,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, List
+from audit_logger import AuditLogger
 
 
 class TaskOrchestrator:
@@ -35,6 +36,9 @@ class TaskOrchestrator:
         self.needs_action.mkdir(parents=True, exist_ok=True)
         self.done.mkdir(parents=True, exist_ok=True)
         self.logs.mkdir(parents=True, exist_ok=True)
+
+        # Initialize audit logger
+        self.audit_logger = AuditLogger()
 
     def run_task_loop(self, task_file: str, prompt: Optional[str] = None) -> bool:
         """
@@ -71,6 +75,23 @@ class TaskOrchestrator:
         print(f"🚀 Starting Task Loop: {task_file}")
         print(f"{'='*70}\n")
 
+        # Log task start
+        self.audit_logger.log_action(
+            action_type="task_start",
+            actor="orchestrator",
+            target=task_file,
+            parameters={
+                "task_path": str(task_path),
+                "max_iterations": self.max_iterations,
+                "prompt_preview": prompt[:200] if prompt else "auto-generated"
+            },
+            result="success",
+            metadata={
+                "workflow_id": f"task-{task_file}-{int(time.time())}"
+            }
+        )
+        self.audit_logger.flush()
+
         iteration = 0
         start_time = time.time()
 
@@ -99,6 +120,24 @@ class TaskOrchestrator:
                 print(f"⏱️  Total time: {total_time:.1f}s")
                 print(f"{'='*70}\n")
 
+                # Log task completion
+                self.audit_logger.log_action(
+                    action_type="task_complete",
+                    actor="orchestrator",
+                    target=task_file,
+                    parameters={
+                        "iterations_used": iteration,
+                        "max_iterations": self.max_iterations,
+                        "total_time_seconds": total_time
+                    },
+                    result="success",
+                    metadata={
+                        "completion_type": "file_moved",
+                        "done_path": str(done_path)
+                    }
+                )
+                self.audit_logger.flush()
+
                 state['status'] = 'completed'
                 state['iterations_used'] = iteration
                 state['total_time'] = total_time
@@ -116,6 +155,22 @@ class TaskOrchestrator:
             # Check if task appears stuck
             if iteration > 3 and self.detect_stuck(task_file, iteration):
                 print(f"\n⚠️  Task appears stuck - same actions repeating")
+
+                # Log stuck task
+                self.audit_logger.log_action(
+                    action_type="task_stuck",
+                    actor="orchestrator",
+                    target=task_file,
+                    parameters={
+                        "iterations_used": iteration,
+                        "max_iterations": self.max_iterations,
+                        "detection_reason": "repeated_actions"
+                    },
+                    result="failure",
+                    error="Task stuck in loop - same actions repeating"
+                )
+                self.audit_logger.flush()
+
                 state['status'] = 'stuck'
                 state['iterations_used'] = iteration
                 self.log_timeout(state)
@@ -132,6 +187,21 @@ class TaskOrchestrator:
         print(f"📊 Iterations: {iteration}/{self.max_iterations}")
         print(f"⏱️  Total time: {total_time:.1f}s")
         print(f"{'='*70}\n")
+
+        # Log task timeout
+        self.audit_logger.log_action(
+            action_type="task_timeout",
+            actor="orchestrator",
+            target=task_file,
+            parameters={
+                "iterations_used": iteration,
+                "max_iterations": self.max_iterations,
+                "total_time_seconds": total_time
+            },
+            result="failure",
+            error=f"Task did not complete within {self.max_iterations} iterations"
+        )
+        self.audit_logger.flush()
 
         state['status'] = 'timeout'
         state['iterations_used'] = iteration

@@ -17,6 +17,12 @@ from watchdog.events import FileSystemEventHandler, FileMovedEvent
 
 from watchers.gmail_state import create_log_entry, load_config, move_file_atomic
 from mcp_servers.email_client import get_email_client
+from scripts.audit_logger import AuditLogger
+
+# Import OdooClient for invoice/payment operations
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'mcp_servers'))
+from odoo_client import OdooClient
 
 
 class ApprovalFileHandler(FileSystemEventHandler):
@@ -87,6 +93,9 @@ class ApprovalExecutor:
 
         # Watchdog observer
         self.observer: Optional[Observer] = None
+
+        # Initialize audit logger
+        self.audit_logger = AuditLogger()
 
     def _load_approval_schema(self) -> Dict[str, Any]:
         """Load approval request JSON schema.
@@ -192,6 +201,31 @@ class ApprovalExecutor:
         # Execute action via MCP
         execution_result = self.execute_action(approval_data)
 
+        # Log approval action to audit log
+        self.audit_logger.log_action(
+            action_type="approval_granted",
+            actor="approval_executor",
+            target=approval_data.get('approval_id', 'unknown'),
+            parameters={
+                "action_type": approval_data.get('action_type', 'unknown'),
+                "approval_file": file_path.name,
+                "action_params": approval_data.get('action_params', {})
+            },
+            result="success" if execution_result.get('status') == 'success' else "failure",
+            error=execution_result.get('error') if execution_result.get('status') != 'success' else None,
+            approval={
+                "required": True,
+                "status": "approved",
+                "approver": "human_admin",
+                "approved_at": datetime.now(UTC).isoformat() + 'Z'
+            },
+            metadata={
+                "execution_result": execution_result,
+                "approval_id": approval_data.get('approval_id', 'unknown')
+            }
+        )
+        self.audit_logger.flush()
+
         # Create log entry for approval
         log_entry = {
             'timestamp': datetime.now(UTC).isoformat() + 'Z',
@@ -224,15 +258,22 @@ class ApprovalExecutor:
             Dict with execution result (status, message_id, etc.)
         """
         action_type = approval_data.get('action_type', 'unknown')
+        operation = approval_data.get('operation', 'unknown')
 
-        print(f"🚀 Executing action: {action_type}")
+        print(f"🚀 Executing action: {action_type or operation}")
 
+        # Handle legacy action_type field
         if action_type == 'email_send':
             return self.execute_email_send(approval_data)
+        # Handle new operation field from Odoo MCP server
+        elif operation == 'invoice':
+            return self.execute_invoice_finalize(approval_data)
+        elif operation == 'payment':
+            return self.execute_payment_record(approval_data)
         else:
             return {
                 'status': 'error',
-                'error': f'Unknown action type: {action_type}'
+                'error': f'Unknown action type: {action_type or operation}'
             }
 
     def execute_email_send(self, approval_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -281,6 +322,130 @@ class ApprovalExecutor:
                 'error': str(e)
             }
 
+    def execute_invoice_finalize(self, approval_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute invoice finalization action via Odoo client.
+
+        Args:
+            approval_data: Parsed approval file data with invoice details
+
+        Returns:
+            Dict with execution result
+        """
+        try:
+            # Extract invoice ID from approval data
+            approval_id = approval_data.get('approval_id')
+
+            # Try to get invoice_id from approval_data directly (if stored in frontmatter)
+            invoice_id = approval_data.get('invoice_id')
+
+            if not invoice_id:
+                return {
+                    'status': 'error',
+                    'error': 'Invoice ID not found in approval data'
+                }
+
+            # Initialize Odoo client and finalize invoice
+            odoo_client = OdooClient()
+            odoo_client.authenticate()
+
+            result = odoo_client.finalize_invoice(invoice_id)
+
+            if result:
+                print(f"✅ Invoice {invoice_id} finalized successfully")
+                return {
+                    'status': 'success',
+                    'invoice_id': invoice_id,
+                    'message': f'Invoice {invoice_id} posted to Odoo'
+                }
+            else:
+                return {
+                    'status': 'error',
+                    'error': 'Failed to finalize invoice'
+                }
+
+        except Exception as e:
+            print(f"❌ Invoice finalization failed: {e}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
+
+    def execute_payment_record(self, approval_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute payment recording action via Odoo client.
+
+        Args:
+            approval_data: Parsed approval file data with payment details
+
+        Returns:
+            Dict with execution result
+        """
+        try:
+            # Extract required fields
+            invoice_id = approval_data.get('invoice_id')
+            amount = approval_data.get('amount')
+            payment_date = approval_data.get('payment_date')
+            payment_method = approval_data.get('payment_method')
+            approval_id = approval_data.get('approval_id')
+
+            # Validate required fields
+            if not invoice_id:
+                return {
+                    'status': 'error',
+                    'error': 'Invoice ID not found in approval data'
+                }
+
+            if not amount:
+                return {
+                    'status': 'error',
+                    'error': 'Amount not found in approval data (required)'
+                }
+
+            if not payment_date:
+                return {
+                    'status': 'error',
+                    'error': 'Payment date not found in approval data (required)'
+                }
+
+            if not payment_method:
+                return {
+                    'status': 'error',
+                    'error': 'Payment method not found in approval data (required)'
+                }
+
+            # Get Odoo client and authenticate
+            odoo_client = OdooClient()
+            odoo_client.authenticate()
+
+            # Record payment
+            payment_id = odoo_client.record_payment(
+                invoice_id=invoice_id,
+                amount=amount,
+                payment_date=payment_date,
+                payment_method=payment_method,
+                approval_id=approval_id
+            )
+
+            if payment_id:
+                print(f"✅ Payment {payment_id} recorded successfully for invoice {invoice_id}")
+                return {
+                    'status': 'success',
+                    'payment_id': payment_id,
+                    'invoice_id': invoice_id,
+                    'message': f'Payment {payment_id} recorded in Odoo'
+                }
+            else:
+                return {
+                    'status': 'error',
+                    'error': 'Failed to record payment'
+                }
+
+        except Exception as e:
+            print(f"❌ Payment recording failed: {e}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
+
     def on_file_moved_to_rejected(self, file_path: str):
         """Handle file moved to Rejected folder.
 
@@ -296,6 +461,44 @@ class ApprovalExecutor:
         # Ensure directories exist
         self.done.mkdir(parents=True, exist_ok=True)
         self.logs.mkdir(parents=True, exist_ok=True)
+
+        # Read approval file to get action details
+        try:
+            with open(file_path, 'r') as f:
+                content = f.read()
+                if content.startswith('---'):
+                    parts = content.split('---', 2)
+                    if len(parts) >= 3:
+                        approval_data = yaml.safe_load(parts[1])
+                    else:
+                        approval_data = {}
+                else:
+                    approval_data = {}
+        except Exception:
+            approval_data = {}
+
+        # Log rejection action to audit log
+        self.audit_logger.log_action(
+            action_type="approval_denied",
+            actor="approval_executor",
+            target=approval_data.get('approval_id', file_path.name),
+            parameters={
+                "action_type": approval_data.get('action_type', 'unknown'),
+                "approval_file": file_path.name,
+                "action_params": approval_data.get('action_params', {})
+            },
+            result="success",
+            approval={
+                "required": True,
+                "status": "denied",
+                "approver": "human_admin",
+                "denied_at": datetime.now(UTC).isoformat() + 'Z'
+            },
+            metadata={
+                "approval_id": approval_data.get('approval_id', 'unknown')
+            }
+        )
+        self.audit_logger.flush()
 
         # Create log entry for rejection
         log_entry = {

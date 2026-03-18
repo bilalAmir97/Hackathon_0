@@ -1,0 +1,12 @@
+{
+  "log_directory": "AI_Employee_Vault/Logs",
+  "encryption_enabled": true,
+  "encryption_key_file": "AI_Employee_Vault/Logs/.encryption_key",
+  "rotation_time": "00:00",
+  "rotation_max_size_mb": 100,
+  "retention_days": 90,
+  "compression_enabled": true,
+  "integrity_checks_enabled": true,
+  "queue_max_size": 1000,
+  "flush_interval_seconds": 5
+}

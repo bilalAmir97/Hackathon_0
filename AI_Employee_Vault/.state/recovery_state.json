@@ -1,0 +1,34 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-03-18T12:29:34.232347Z",
+  "circuit_breakers": {
+    "odoo_auth": {
+      "service_name": "odoo_auth",
+      "state": "CLOSED",
+      "failure_count": 0,
+      "last_failure_time": "2026-03-18T12:26:11.798966Z",
+      "cooldown_period": 60.0,
+      "failure_threshold": 5,
+      "success_threshold": 1
+    },
+    "odoo_payment": {
+      "service_name": "odoo_payment",
+      "state": "CLOSED",
+      "failure_count": 0,
+      "last_failure_time": "2026-03-17T18:54:30.329141Z",
+      "cooldown_period": 60.0,
+      "failure_threshold": 5,
+      "success_threshold": 1
+    },
+    "odoo_invoice": {
+      "service_name": "odoo_invoice",
+      "state": "CLOSED",
+      "failure_count": 0,
+      "last_failure_time": null,
+      "cooldown_period": 60.0,
+      "failure_threshold": 5,
+      "success_threshold": 1
+    }
+  },
+  "service_health": {}
+}

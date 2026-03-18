@@ -1,0 +1,10 @@
+Requirement already satisfied: cryptography in /home/bilal-amir/venv/lib/python3.12/site-packages (46.0.3)
+Collecting python-dateutil
+  Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+Requirement already satisfied: cffi>=2.0.0 in /home/bilal-amir/venv/lib/python3.12/site-packages (from cryptography) (2.0.0)
+Requirement already satisfied: six>=1.5 in /home/bilal-amir/venv/lib/python3.12/site-packages (from python-dateutil) (1.17.0)
+Requirement already satisfied: pycparser in /home/bilal-amir/venv/lib/python3.12/site-packages (from cffi>=2.0.0->cryptography) (2.23)
+Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 229.9/229.9 kB 698.2 kB/s eta 0:00:00
+Installing collected packages: python-dateutil
+Successfully installed python-dateutil-2.9.0.post0

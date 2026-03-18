@@ -24,6 +24,9 @@ project_root = Path(__file__).parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
+from scripts.audit_logger import AuditLogger
+from scripts.error_recovery.decorators import with_retry, with_circuit_breaker
+
 
 # Default priority keywords
 DEFAULT_PRIORITY_KEYWORDS = [
@@ -39,35 +42,37 @@ DEFAULT_PRIORITY_KEYWORDS = [
 ]
 
 
-def retry_with_backoff(max_retries: int = 3, base_delay: float = 1.0):
-    """Decorator for exponential backoff retry logic.
-
-    Retries failed operations with exponential backoff: 1s, 2s, 4s.
-
-    Args:
-        max_retries: Maximum number of retry attempts (default: 3)
-        base_delay: Base delay in seconds (default: 1.0)
-
-    Returns:
-        Decorated function with retry logic
-    """
-    def decorator(func: Callable) -> Callable:
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            for attempt in range(max_retries):
-                try:
-                    return func(*args, **kwargs)
-                except Exception as e:
-                    if attempt < max_retries - 1:
-                        delay = base_delay * (2 ** attempt)  # 1s, 2s, 4s
-                        print(f"⚠️  Attempt {attempt + 1} failed: {e}")
-                        print(f"   Retrying in {delay}s...")
-                        time.sleep(delay)
-                    else:
-                        print(f"✗ All {max_retries} attempts failed")
-                        raise
-        return wrapper
-    return decorator
+# OLD RETRY LOGIC - Replaced by error_recovery.decorators
+# Kept commented for rollback if needed
+# def retry_with_backoff(max_retries: int = 3, base_delay: float = 1.0):
+#     """Decorator for exponential backoff retry logic.
+#
+#     Retries failed operations with exponential backoff: 1s, 2s, 4s.
+#
+#     Args:
+#         max_retries: Maximum number of retry attempts (default: 3)
+#         base_delay: Base delay in seconds (default: 1.0)
+#
+#     Returns:
+#         Decorated function with retry logic
+#     """
+#     def decorator(func: Callable) -> Callable:
+#         @functools.wraps(func)
+#         def wrapper(*args, **kwargs):
+#             for attempt in range(max_retries):
+#                 try:
+#                     return func(*args, **kwargs)
+#                 except Exception as e:
+#                     if attempt < max_retries - 1:
+#                         delay = base_delay * (2 ** attempt)  # 1s, 2s, 4s
+#                         print(f"⚠️  Attempt {attempt + 1} failed: {e}")
+#                         print(f"   Retrying in {delay}s...")
+#                         time.sleep(delay)
+#                     else:
+#                         print(f"✗ All {max_retries} attempts failed")
+#                         raise
+#         return wrapper
+#     return decorator
 
 
 class WhatsAppState:
@@ -224,6 +229,9 @@ class WhatsAppWatcher:
 
         # Shutdown flag
         self._shutdown_requested = False
+
+        # Initialize audit logger
+        self.audit_logger = AuditLogger()
 
         # Setup signal handlers for graceful shutdown
         signal.signal(signal.SIGTERM, self._signal_handler)
