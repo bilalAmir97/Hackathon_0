@@ -101,7 +101,7 @@ class TwitterClient:
             raise Exception(f"Twitter authentication failed: {e}")
 
     @with_retry(max_attempts=3, base_delay=1.0)
-    @with_circuit_breaker(failure_threshold=5, cooldown_seconds=60)
+    @with_circuit_breaker(service_name="twitter_post", failure_threshold=5, cooldown_seconds=60)
     def post_tweet(
         self,
         text: str,
@@ -170,7 +170,7 @@ class TwitterClient:
             raise Exception(f"Failed to upload media: {e}")
 
     @with_retry(max_attempts=3, base_delay=1.0)
-    @with_circuit_breaker(failure_threshold=5, cooldown_seconds=60)
+    @with_circuit_breaker(service_name="twitter_thread", failure_threshold=5, cooldown_seconds=60)
     def create_thread(
         self,
         tweets: List[str],

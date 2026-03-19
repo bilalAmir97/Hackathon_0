@@ -206,7 +206,8 @@ def with_retry(max_attempts=5, base_delay=1.0, max_delay=60.0,
     return decorator
 
 
-def with_circuit_breaker(service_name: str):
+def with_circuit_breaker(service_name: str, failure_threshold: int = 5,
+                         cooldown_seconds: float = 60.0, success_threshold: int = 1):
     """
     Decorator for circuit breaker protection.
 
@@ -216,6 +217,9 @@ def with_circuit_breaker(service_name: str):
 
     Args:
         service_name: Name of the service to protect
+        failure_threshold: Number of failures before opening circuit (default: 5)
+        cooldown_seconds: Cooldown period in seconds (default: 60.0)
+        success_threshold: Number of successes to close circuit (default: 1)
 
     Returns:
         Decorated function with circuit breaker protection
@@ -224,6 +228,10 @@ def with_circuit_breaker(service_name: str):
         @with_circuit_breaker(service_name='gmail_api')
         def fetch_emails():
             return gmail.users().messages().list().execute()
+
+        @with_circuit_breaker(service_name='odoo', failure_threshold=10, cooldown_seconds=120)
+        def create_invoice():
+            return odoo.create_invoice()
     """
     def decorator(func):
         @wraps(func)
