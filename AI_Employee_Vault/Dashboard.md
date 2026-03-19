@@ -1,4 +1,12 @@
 
+## 📋 Today's Briefing (2026-03-19)
+See: [Briefings/BRIEFING_2026-03-19.md](Briefings/BRIEFING_2026-03-19.md)
+
+
+## 📋 Today's Briefing (2026-03-19)
+See: [Briefings/BRIEFING_2026-03-19.md](Briefings/BRIEFING_2026-03-19.md)
+
+
 ## 📋 Today's Briefing (2026-03-16)
 See: [Briefings/BRIEFING_2026-03-16.md](Briefings/BRIEFING_2026-03-16.md)
 
