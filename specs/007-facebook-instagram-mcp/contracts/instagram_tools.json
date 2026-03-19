@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Instagram MCP Tools",
+  "description": "MCP tool contracts for Instagram business account operations",
+  "tools": [
+    {
+      "name": "instagram_post_image",
+      "description": "Post image with caption to Instagram business account (requires approval)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "Instagram business account ID (numeric string)"
+          },
+          "caption": {
+            "type": "string",
+            "description": "Post caption (max 2,200 characters)",
+            "maxLength": 2200
+          },
+          "image_path": {
+            "type": "string",
+            "description": "Local path to image file (JPEG or PNG, max 8MB, aspect ratio 4:5 to 1.91:1)"
+          },
+          "scheduled_time": {
+            "type": "string",
+            "description": "Optional ISO 8601 timestamp for scheduling (future time)",
+            "format": "date-time"
+          }
+        },
+        "required": ["account_id", "caption", "image_path"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["pending_approval", "error"]
+          },
+          "approval_id": {
+            "type": "string",
+            "description": "Approval request ID for tracking"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable status message"
+          },
+          "approval_file": {
+            "type": "string",
+            "description": "Path to approval request file"
+          },
+          "validation": {
+            "type": "object",
+            "description": "Image validation results",
+            "properties": {
+              "format": {
+                "type": "string"
+              },
+              "size_mb": {
+                "type": "number"
+              },
+              "dimensions": {
+                "type": "string"
+              },
+              "aspect_ratio": {
+                "type": "number"
+              }
+            }
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if status is error"
+          }
+        },
+        "required": ["status", "message"]
+      }
+    },
+    {
+      "name": "instagram_post_carousel",
+      "description": "Post carousel (multiple images) to Instagram business account (requires approval)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "Instagram business account ID (numeric string)"
+          },
+          "caption": {
+            "type": "string",
+            "description": "Post caption (max 2,200 characters)",
+            "maxLength": 2200
+          },
+          "image_paths": {
+            "type": "array",
+            "description": "Array of local paths to image files (2-10 images, JPEG or PNG, max 8MB each)",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 2,
+            "maxItems": 10
+          },
+          "scheduled_time": {
+            "type": "string",
+            "description": "Optional ISO 8601 timestamp for scheduling (future time)",
+            "format": "date-time"
+          }
+        },
+        "required": ["account_id", "caption", "image_paths"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["pending_approval", "error"]
+          },
+          "approval_id": {
+            "type": "string",
+            "description": "Approval request ID for tracking"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable status message"
+          },
+          "approval_file": {
+            "type": "string",
+            "description": "Path to approval request file"
+          },
+          "validation": {
+            "type": "object",
+            "description": "Image validation results for all images",
+            "properties": {
+              "images_validated": {
+                "type": "integer"
+              },
+              "all_valid": {
+                "type": "boolean"
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if status is error"
+          }
+        },
+        "required": ["status", "message"]
+      }
+    },
+    {
+      "name": "get_instagram_post_metrics",
+      "description": "Retrieve engagement metrics for an Instagram post (read-only, no approval required)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "media_id": {
+            "type": "string",
+            "description": "Instagram media ID (numeric string)"
+          },
+          "metrics": {
+            "type": "array",
+            "description": "Optional list of specific metrics to retrieve (default: all)",
+            "items": {
+              "type": "string",
+              "enum": ["likes", "comments", "saves", "reach", "impressions", "engagement_rate"]
+            }
+          }
+        },
+        "required": ["media_id"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success", "error"]
+          },
+          "media_id": {
+            "type": "string"
+          },
+          "metrics": {
+            "type": "object",
+            "properties": {
+              "likes": {
+                "type": "integer"
+              },
+              "comments": {
+                "type": "integer"
+              },
+              "saves": {
+                "type": "integer"
+              },
+              "reach": {
+                "type": "integer"
+              },
+              "impressions": {
+                "type": "integer"
+              },
+              "engagement_rate": {
+                "type": "number",
+                "description": "Engagement rate as percentage"
+              }
+            }
+          },
+          "cached": {
+            "type": "boolean",
+            "description": "Whether data was served from cache"
+          },
+          "cached_until": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When cached data expires"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if status is error"
+          }
+        },
+        "required": ["status"]
+      }
+    },
+    {
+      "name": "get_instagram_account_insights",
+      "description": "Retrieve account-level insights and analytics (read-only, no approval required)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "description": "Instagram business account ID (numeric string)"
+          },
+          "period": {
+            "type": "string",
+            "description": "Time period for insights (default: week)",
+            "enum": ["day", "week", "month"],
+            "default": "week"
+          },
+          "metrics": {
+            "type": "array",
+            "description": "Optional list of specific metrics to retrieve (default: all)",
+            "items": {
+              "type": "string",
+              "enum": ["follower_count", "impressions", "reach", "profile_views", "website_clicks"]
+            }
+          }
+        },
+        "required": ["account_id"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success", "error"]
+          },
+          "account_id": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          },
+          "insights": {
+            "type": "object",
+            "properties": {
+              "follower_count": {
+                "type": "integer",
+                "description": "Total followers"
+              },
+              "impressions": {
+                "type": "integer",
+                "description": "Total impressions in period"
+              },
+              "reach": {
+                "type": "integer",
+                "description": "Unique accounts reached in period"
+              },
+              "profile_views": {
+                "type": "integer",
+                "description": "Profile views in period"
+              },
+              "website_clicks": {
+                "type": "integer",
+                "description": "Website clicks in period"
+              }
+            }
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if status is error"
+          }
+        },
+        "required": ["status"]
+      }
+    }
+  ]
+}

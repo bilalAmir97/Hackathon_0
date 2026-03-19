@@ -3,51 +3,12 @@
     "password",
     "passwd",
     "pwd",
-    "pass",
     "api_key",
-    "apikey",
-    "api-key",
     "token",
+    "secret",
     "access_token",
     "refresh_token",
-    "secret",
-    "client_secret",
-    "credential",
-    "credentials",
-    "private_key",
-    "privatekey"
+    "client_secret"
   ],
-  "content_patterns": [
-    {
-      "name": "aws_key",
-      "regex": "AKIA[0-9A-Z]{16}",
-      "replacement": "***REDACTED_AWS_KEY***"
-    },
-    {
-      "name": "google_api_key",
-      "regex": "AIza[0-9A-Za-z\\-_]{35}",
-      "replacement": "***REDACTED_GOOGLE_KEY***"
-    },
-    {
-      "name": "github_token",
-      "regex": "ghp_[0-9a-zA-Z]{36}",
-      "replacement": "***REDACTED_GITHUB_TOKEN***"
-    },
-    {
-      "name": "credit_card",
-      "regex": "\\b(?:\\d{4}[- ]?){3}\\d{4}\\b",
-      "replacement": "****-****-****-XXXX",
-      "show_last_n": 4
-    },
-    {
-      "name": "jwt_token",
-      "regex": "eyJ[A-Za-z0-9-_]+\\.eyJ[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+",
-      "replacement": "***REDACTED_JWT***"
-    },
-    {
-      "name": "generic_token",
-      "regex": "[A-Za-z0-9_\\-]{32,}",
-      "replacement": "***REDACTED***"
-    }
-  ]
+  "content_patterns": []
 }

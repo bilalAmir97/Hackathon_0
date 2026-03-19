@@ -170,3 +170,114 @@ def reset_service_health_state():
     # Clear global state after test
     service_health._last_alert_time.clear()
 
+
+# Social Media Test Fixtures (Facebook & Instagram MCP Server)
+
+@pytest.fixture
+def temp_vault(tmp_path):
+    """Create temporary vault directory structure for social media tests."""
+    vault = tmp_path / "AI_Employee_Vault"
+    (vault / "Pending_Approval").mkdir(parents=True)
+    (vault / "Approved").mkdir(parents=True)
+    (vault / "Rejected").mkdir(parents=True)
+    (vault / "Done").mkdir(parents=True)
+    (vault / "Needs_Action").mkdir(parents=True)
+    (vault / "Logs").mkdir(parents=True)
+    return vault
+
+
+@pytest.fixture
+def valid_facebook_image(tmp_path):
+    """Create valid Facebook image (JPEG, 800x600, < 4MB)."""
+    from PIL import Image
+
+    image_path = tmp_path / "facebook_valid.jpg"
+    img = Image.new('RGB', (800, 600), color='red')
+    img.save(image_path, quality=85)
+    return str(image_path)
+
+
+@pytest.fixture
+def valid_instagram_image(tmp_path):
+    """Create valid Instagram image (JPEG, 1080x1080, < 8MB)."""
+    from PIL import Image
+
+    image_path = tmp_path / "instagram_valid.jpg"
+    img = Image.new('RGB', (1080, 1080), color='blue')
+    img.save(image_path, quality=85)
+    return str(image_path)
+
+
+@pytest.fixture
+def carousel_images(tmp_path):
+    """Create multiple images for carousel testing."""
+    from PIL import Image
+
+    images = []
+    for i in range(3):
+        image_path = tmp_path / f"carousel_{i}.jpg"
+        img = Image.new('RGB', (1080, 1080), color=(i*80, i*80, i*80))
+        img.save(image_path, quality=85)
+        images.append(str(image_path))
+    return images
+
+
+@pytest.fixture
+def mock_meta_client():
+    """Create mock MetaGraphClient for social media tests."""
+    from datetime import datetime
+
+    client = Mock()
+    client.facebook_page_token = "test_fb_token"
+    client.facebook_page_id = "123456789"
+    client.instagram_token = "test_ig_token"
+    client.instagram_account_id = "987654321"
+
+    # Mock methods
+    client.post_to_facebook_page.return_value = {
+        "post_id": "123456789_987654321",
+        "created_time": datetime.utcnow().isoformat()
+    }
+
+    client.post_image_to_facebook.return_value = {
+        "post_id": "123456789_111222333",
+        "created_time": datetime.utcnow().isoformat()
+    }
+
+    client.post_to_instagram.return_value = {
+        "media_id": "IG_17890123456789",
+        "created_time": datetime.utcnow().isoformat()
+    }
+
+    client.get_facebook_post_metrics.return_value = {
+        "likes": 100,
+        "comments": 20,
+        "shares": 5
+    }
+
+    return client
+
+
+@pytest.fixture
+def facebook_env_vars():
+    """Facebook environment variables for testing."""
+    return {
+        "FACEBOOK_PAGE_ACCESS_TOKEN": "test_fb_token_12345",
+        "FACEBOOK_PAGE_ID": "123456789",
+        "META_GRAPH_API_VERSION": "v19.0",
+        "META_RATE_LIMIT_THRESHOLD": "0.8",
+        "FACEBOOK_MAX_IMAGE_SIZE_MB": "4"
+    }
+
+
+@pytest.fixture
+def instagram_env_vars():
+    """Instagram environment variables for testing."""
+    return {
+        "INSTAGRAM_BUSINESS_ACCESS_TOKEN": "test_ig_token_67890",
+        "INSTAGRAM_BUSINESS_ACCOUNT_ID": "987654321",
+        "META_GRAPH_API_VERSION": "v19.0",
+        "META_RATE_LIMIT_THRESHOLD": "0.8",
+        "INSTAGRAM_MAX_IMAGE_SIZE_MB": "8"
+    }
+

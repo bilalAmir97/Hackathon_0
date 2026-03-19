@@ -1,0 +1,271 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Facebook MCP Tools",
+  "description": "MCP tool contracts for Facebook page operations",
+  "tools": [
+    {
+      "name": "facebook_post_text",
+      "description": "Post text content to a Facebook page (requires approval)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "description": "Facebook page ID (numeric string)"
+          },
+          "message": {
+            "type": "string",
+            "description": "Post content (max 63,206 characters)",
+            "maxLength": 63206
+          },
+          "link": {
+            "type": "string",
+            "description": "Optional URL to attach to post",
+            "format": "uri"
+          },
+          "scheduled_time": {
+            "type": "string",
+            "description": "Optional ISO 8601 timestamp for scheduling (future time)",
+            "format": "date-time"
+          }
+        },
+        "required": ["page_id", "message"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["pending_approval", "error"]
+          },
+          "approval_id": {
+            "type": "string",
+            "description": "Approval request ID for tracking"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable status message"
+          },
+          "approval_file": {
+            "type": "string",
+            "description": "Path to approval request file"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if status is error"
+          }
+        },
+        "required": ["status", "message"]
+      }
+    },
+    {
+      "name": "facebook_post_image",
+      "description": "Post image with caption to a Facebook page (requires approval)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "description": "Facebook page ID (numeric string)"
+          },
+          "message": {
+            "type": "string",
+            "description": "Post caption (max 63,206 characters)",
+            "maxLength": 63206
+          },
+          "image_path": {
+            "type": "string",
+            "description": "Local path to image file (JPEG, PNG, or GIF, max 4MB)"
+          },
+          "scheduled_time": {
+            "type": "string",
+            "description": "Optional ISO 8601 timestamp for scheduling (future time)",
+            "format": "date-time"
+          }
+        },
+        "required": ["page_id", "message", "image_path"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["pending_approval", "error"]
+          },
+          "approval_id": {
+            "type": "string",
+            "description": "Approval request ID for tracking"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable status message"
+          },
+          "approval_file": {
+            "type": "string",
+            "description": "Path to approval request file"
+          },
+          "validation": {
+            "type": "object",
+            "description": "Image validation results",
+            "properties": {
+              "format": {
+                "type": "string"
+              },
+              "size_mb": {
+                "type": "number"
+              },
+              "dimensions": {
+                "type": "string"
+              }
+            }
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if status is error"
+          }
+        },
+        "required": ["status", "message"]
+      }
+    },
+    {
+      "name": "get_facebook_post_metrics",
+      "description": "Retrieve engagement metrics for a Facebook post (read-only, no approval required)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "post_id": {
+            "type": "string",
+            "description": "Facebook post ID (format: {page_id}_{post_id})"
+          },
+          "metrics": {
+            "type": "array",
+            "description": "Optional list of specific metrics to retrieve (default: all)",
+            "items": {
+              "type": "string",
+              "enum": ["likes", "comments", "shares", "reactions", "reach", "impressions"]
+            }
+          }
+        },
+        "required": ["post_id"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success", "error"]
+          },
+          "post_id": {
+            "type": "string"
+          },
+          "metrics": {
+            "type": "object",
+            "properties": {
+              "likes": {
+                "type": "integer"
+              },
+              "comments": {
+                "type": "integer"
+              },
+              "shares": {
+                "type": "integer"
+              },
+              "reactions": {
+                "type": "integer"
+              },
+              "reach": {
+                "type": "integer"
+              },
+              "impressions": {
+                "type": "integer"
+              }
+            }
+          },
+          "cached": {
+            "type": "boolean",
+            "description": "Whether data was served from cache"
+          },
+          "cached_until": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When cached data expires"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if status is error"
+          }
+        },
+        "required": ["status"]
+      }
+    },
+    {
+      "name": "get_facebook_page_insights",
+      "description": "Retrieve page-level insights and analytics (read-only, no approval required)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "description": "Facebook page ID (numeric string)"
+          },
+          "period": {
+            "type": "string",
+            "description": "Time period for insights (default: week)",
+            "enum": ["day", "week", "month"],
+            "default": "week"
+          },
+          "metrics": {
+            "type": "array",
+            "description": "Optional list of specific metrics to retrieve (default: all)",
+            "items": {
+              "type": "string",
+              "enum": ["page_fans", "page_impressions", "page_engaged_users", "page_post_engagements"]
+            }
+          }
+        },
+        "required": ["page_id"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success", "error"]
+          },
+          "page_id": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          },
+          "insights": {
+            "type": "object",
+            "properties": {
+              "page_fans": {
+                "type": "integer",
+                "description": "Total page followers"
+              },
+              "page_impressions": {
+                "type": "integer",
+                "description": "Total impressions in period"
+              },
+              "page_engaged_users": {
+                "type": "integer",
+                "description": "Unique users who engaged in period"
+              },
+              "page_post_engagements": {
+                "type": "integer",
+                "description": "Total post engagements in period"
+              }
+            }
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if status is error"
+          }
+        },
+        "required": ["status"]
+      }
+    }
+  ]
+}
