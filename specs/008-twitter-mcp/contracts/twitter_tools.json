@@ -1,0 +1,295 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Twitter MCP Tools",
+  "description": "MCP tool schemas for Twitter integration",
+  "version": "1.0.0",
+  "tools": [
+    {
+      "name": "twitter_post_tweet",
+      "description": "Post a tweet to Twitter with optional images. Creates approval request before posting.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Tweet text content",
+            "minLength": 1,
+            "maxLength": 280
+          },
+          "image_paths": {
+            "type": "array",
+            "description": "Local file paths to images to attach (max 4)",
+            "items": {
+              "type": "string",
+              "pattern": "^(/|\\./|[A-Za-z]:\\\\).*\\.(jpg|jpeg|png|gif)$"
+            },
+            "maxItems": 4,
+            "default": []
+          },
+          "scheduled_time": {
+            "type": "string",
+            "description": "ISO 8601 timestamp for scheduled posting (null for immediate)",
+            "format": "date-time",
+            "default": null
+          }
+        },
+        "required": ["text"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["approval_created", "error"]
+          },
+          "approval_id": {
+            "type": "string",
+            "description": "Unique approval request identifier"
+          },
+          "approval_file": {
+            "type": "string",
+            "description": "Path to approval request file"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable status message"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if status is error"
+          }
+        },
+        "required": ["status", "message"]
+      }
+    },
+    {
+      "name": "twitter_post_thread",
+      "description": "Post a thread of tweets to Twitter. Tweets are automatically numbered and linked. Creates approval request before posting.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tweets": {
+            "type": "array",
+            "description": "Array of tweet texts (will be auto-numbered)",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 260
+            },
+            "minItems": 2,
+            "maxItems": 25
+          },
+          "image_paths": {
+            "type": "array",
+            "description": "Local file paths to images (distributed across tweets)",
+            "items": {
+              "type": "string",
+              "pattern": "^(/|\\./|[A-Za-z]:\\\\).*\\.(jpg|jpeg|png|gif)$"
+            },
+            "maxItems": 4,
+            "default": []
+          },
+          "scheduled_time": {
+            "type": "string",
+            "description": "ISO 8601 timestamp for scheduled posting (null for immediate)",
+            "format": "date-time",
+            "default": null
+          }
+        },
+        "required": ["tweets"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["approval_created", "error"]
+          },
+          "approval_id": {
+            "type": "string",
+            "description": "Unique approval request identifier"
+          },
+          "approval_file": {
+            "type": "string",
+            "description": "Path to approval request file"
+          },
+          "total_tweets": {
+            "type": "integer",
+            "description": "Number of tweets in thread"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable status message"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if status is error"
+          }
+        },
+        "required": ["status", "message"]
+      }
+    },
+    {
+      "name": "twitter_get_mentions",
+      "description": "Retrieve tweets that mention the authenticated user's account from the last 7 days.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "since": {
+            "type": "string",
+            "description": "ISO 8601 timestamp to retrieve mentions since (max 7 days ago)",
+            "format": "date-time",
+            "default": null
+          },
+          "max_results": {
+            "type": "integer",
+            "description": "Maximum number of mentions to retrieve",
+            "minimum": 5,
+            "maximum": 100,
+            "default": 10
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success", "error"]
+          },
+          "mentions": {
+            "type": "array",
+            "description": "Array of mention objects",
+            "items": {
+              "type": "object",
+              "properties": {
+                "mention_id": {
+                  "type": "string",
+                  "description": "Unique mention identifier"
+                },
+                "tweet_id": {
+                  "type": "string",
+                  "description": "ID of tweet containing mention"
+                },
+                "author_id": {
+                  "type": "string",
+                  "description": "Twitter user ID who mentioned us"
+                },
+                "author_username": {
+                  "type": "string",
+                  "description": "Twitter username who mentioned us"
+                },
+                "text": {
+                  "type": "string",
+                  "description": "Full text of mention tweet"
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "When mention was created"
+                },
+                "conversation_id": {
+                  "type": "string",
+                  "description": "ID of conversation thread"
+                }
+              },
+              "required": ["mention_id", "tweet_id", "author_id", "author_username", "text", "created_at"]
+            }
+          },
+          "count": {
+            "type": "integer",
+            "description": "Number of mentions returned"
+          },
+          "cached": {
+            "type": "boolean",
+            "description": "Whether results were served from cache"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable status message"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if status is error"
+          }
+        },
+        "required": ["status", "message"]
+      }
+    },
+    {
+      "name": "twitter_get_metrics",
+      "description": "Retrieve engagement metrics for a specific tweet.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tweet_id": {
+            "type": "string",
+            "description": "Twitter tweet ID to get metrics for",
+            "pattern": "^[0-9]{15,20}$"
+          }
+        },
+        "required": ["tweet_id"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success", "error"]
+          },
+          "metrics": {
+            "type": "object",
+            "description": "Engagement metrics for the tweet",
+            "properties": {
+              "likes": {
+                "type": "integer",
+                "description": "Number of likes",
+                "minimum": 0
+              },
+              "retweets": {
+                "type": "integer",
+                "description": "Number of retweets",
+                "minimum": 0
+              },
+              "replies": {
+                "type": "integer",
+                "description": "Number of replies",
+                "minimum": 0
+              },
+              "impressions": {
+                "type": "integer",
+                "description": "Number of times tweet was viewed",
+                "minimum": 0
+              },
+              "engagement_rate": {
+                "type": "number",
+                "description": "Calculated engagement rate (0.0-1.0)",
+                "minimum": 0.0,
+                "maximum": 1.0
+              },
+              "cached_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "When metrics were last fetched"
+              }
+            },
+            "required": ["likes", "retweets", "replies", "cached_at"]
+          },
+          "cached": {
+            "type": "boolean",
+            "description": "Whether results were served from cache"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable status message"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if status is error"
+          }
+        },
+        "required": ["status", "message"]
+      }
+    }
+  ]
+}

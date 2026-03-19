@@ -420,6 +420,52 @@ class OdooClient:
 
         return invoices
 
+    def list_invoices(
+        self,
+        filters: Optional[List] = None,
+        limit: int = 100,
+        offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """
+        List invoices with optional Odoo domain filters.
+
+        This is a convenience wrapper around search_invoices that accepts
+        Odoo domain filters directly for more advanced queries.
+
+        Args:
+            filters: Optional Odoo domain filters (e.g., [['state', '=', 'posted']])
+            limit: Maximum number of results to return (default: 100)
+            offset: Number of results to skip (default: 0)
+
+        Returns:
+            List of invoice dictionaries
+
+        Example:
+            >>> client.list_invoices(filters=[['state', '=', 'posted']], limit=10)
+            [{"id": 100, "name": "INV/2026/0001", ...}]
+        """
+        # If no filters provided, just return all invoices
+        if not filters:
+            return self.search_invoices(limit=limit, offset=offset)
+
+        # Parse common filter patterns and convert to search_invoices parameters
+        kwargs = {'limit': limit, 'offset': offset}
+
+        for filter_item in filters:
+            if len(filter_item) == 3:
+                field, operator, value = filter_item
+
+                if field == 'invoice_date' and operator == '>=':
+                    kwargs['date_from'] = value
+                elif field == 'invoice_date' and operator == '<=':
+                    kwargs['date_to'] = value
+                elif field == 'partner_id' and operator == '=':
+                    kwargs['customer_id'] = value
+                elif field == 'state' and operator == '=':
+                    kwargs['status'] = value
+
+        return self.search_invoices(**kwargs)
+
     @with_retry(max_attempts=3, base_delay=1.0)
     @with_circuit_breaker(service_name="odoo_financial_report")
     def get_financial_report(

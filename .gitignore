@@ -78,3 +78,12 @@ test_*.py
 # Vault runtime files
 AI_Employee_Vault/Needs_Action/ALERT_HEALTH_*.md
 AI_Employee_Vault/.quarantine/
+
+# Twitter MCP specific
+.twitter_cache/
+twitter_state.json
+
+# Data Collectors & Business Intelligence (Gold Tier - Module 4)
+.data_cache/
+AI_Employee_Vault/Briefings/WEEKLY_AUDIT_*.md
+AI_Employee_Vault/Briefings/BRIEFING_*.md
