@@ -24,6 +24,14 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'mcp_servers'))
 from odoo_client import OdooClient
 
+# Import social media execution functions
+from mcp_servers.facebook_instagram_mcp_server import (
+    execute_facebook_post_text,
+    execute_facebook_post_image,
+    execute_instagram_post_image,
+    execute_instagram_post_carousel
+)
+
 
 class ApprovalFileHandler(FileSystemEventHandler):
     """File system event handler for approval workflow.
@@ -270,6 +278,15 @@ class ApprovalExecutor:
             return self.execute_invoice_finalize(approval_data)
         elif operation == 'payment':
             return self.execute_payment_record(approval_data)
+        # Handle social media actions from Facebook & Instagram MCP server
+        elif action_type == 'facebook_post_text':
+            return self.execute_facebook_post_text(approval_data)
+        elif action_type == 'facebook_post_image':
+            return self.execute_facebook_post_image(approval_data)
+        elif action_type == 'instagram_post_image':
+            return self.execute_instagram_post_image(approval_data)
+        elif action_type == 'instagram_post_carousel':
+            return self.execute_instagram_post_carousel(approval_data)
         else:
             return {
                 'status': 'error',
@@ -441,6 +458,190 @@ class ApprovalExecutor:
 
         except Exception as e:
             print(f"❌ Payment recording failed: {e}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
+
+    def execute_facebook_post_text(self, approval_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute Facebook text post action.
+
+        Args:
+            approval_data: Parsed approval file data with post details
+
+        Returns:
+            Dict with execution result
+        """
+        try:
+            approval_id = approval_data.get('approval_id')
+            metadata = approval_data.get('metadata', {})
+
+            if not approval_id:
+                return {
+                    'status': 'error',
+                    'error': 'Approval ID not found in approval data'
+                }
+
+            # Execute via imported function
+            result = execute_facebook_post_text(approval_id, metadata)
+
+            # Debug: Check result type
+            if not isinstance(result, dict):
+                print(f"⚠️ WARNING: execute_facebook_post_text returned {type(result).__name__}: {result}")
+                return {
+                    'status': 'error',
+                    'error': f'execute_facebook_post_text returned {type(result).__name__} instead of dict'
+                }
+
+            if result.get('success'):
+                print(f"✅ Facebook post published: {result.get('post_id')}")
+                return {
+                    'status': 'success',
+                    'post_id': result.get('post_id'),
+                    'permalink': result.get('permalink'),
+                    'message': f"Facebook post published successfully"
+                }
+            else:
+                print(f"❌ Facebook post failed: {result.get('error')}")
+                return {
+                    'status': 'error',
+                    'error': result.get('error')
+                }
+
+        except Exception as e:
+            print(f"❌ Facebook post execution failed: {e}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
+
+    def execute_facebook_post_image(self, approval_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute Facebook image post action.
+
+        Args:
+            approval_data: Parsed approval file data with post details
+
+        Returns:
+            Dict with execution result
+        """
+        try:
+            approval_id = approval_data.get('approval_id')
+            metadata = approval_data.get('metadata', {})
+
+            if not approval_id:
+                return {
+                    'status': 'error',
+                    'error': 'Approval ID not found in approval data'
+                }
+
+            # Execute via imported function
+            result = execute_facebook_post_image(approval_id, metadata)
+
+            if result.get('success'):
+                print(f"✅ Facebook image post published: {result.get('post_id')}")
+                return {
+                    'status': 'success',
+                    'post_id': result.get('post_id'),
+                    'permalink': result.get('permalink'),
+                    'message': f"Facebook image post published successfully"
+                }
+            else:
+                print(f"❌ Facebook image post failed: {result.get('error')}")
+                return {
+                    'status': 'error',
+                    'error': result.get('error')
+                }
+
+        except Exception as e:
+            print(f"❌ Facebook image post execution failed: {e}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
+
+    def execute_instagram_post_image(self, approval_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute Instagram image post action.
+
+        Args:
+            approval_data: Parsed approval file data with post details
+
+        Returns:
+            Dict with execution result
+        """
+        try:
+            approval_id = approval_data.get('approval_id')
+            metadata = approval_data.get('metadata', {})
+
+            if not approval_id:
+                return {
+                    'status': 'error',
+                    'error': 'Approval ID not found in approval data'
+                }
+
+            # Execute via imported function
+            result = execute_instagram_post_image(approval_id, metadata)
+
+            if result.get('success'):
+                print(f"✅ Instagram post published: {result.get('media_id')}")
+                return {
+                    'status': 'success',
+                    'media_id': result.get('media_id'),
+                    'permalink': result.get('permalink'),
+                    'message': f"Instagram post published successfully"
+                }
+            else:
+                print(f"❌ Instagram post failed: {result.get('error')}")
+                return {
+                    'status': 'error',
+                    'error': result.get('error')
+                }
+
+        except Exception as e:
+            print(f"❌ Instagram post execution failed: {e}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
+
+    def execute_instagram_post_carousel(self, approval_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute Instagram carousel post action.
+
+        Args:
+            approval_data: Parsed approval file data with post details
+
+        Returns:
+            Dict with execution result
+        """
+        try:
+            approval_id = approval_data.get('approval_id')
+            metadata = approval_data.get('metadata', {})
+
+            if not approval_id:
+                return {
+                    'status': 'error',
+                    'error': 'Approval ID not found in approval data'
+                }
+
+            # Execute via imported function
+            result = execute_instagram_post_carousel(approval_id, metadata)
+
+            if result.get('success'):
+                print(f"✅ Instagram carousel published: {result.get('media_id')}")
+                return {
+                    'status': 'success',
+                    'media_id': result.get('media_id'),
+                    'permalink': result.get('permalink'),
+                    'message': f"Instagram carousel published successfully"
+                }
+            else:
+                print(f"❌ Instagram carousel failed: {result.get('error')}")
+                return {
+                    'status': 'error',
+                    'error': result.get('error')
+                }
+
+        except Exception as e:
+            print(f"❌ Instagram carousel execution failed: {e}")
             return {
                 'status': 'error',
                 'error': str(e)

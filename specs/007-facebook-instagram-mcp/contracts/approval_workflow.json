@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Approval Workflow Contract",
+  "description": "Contract for approval request files used in the approval workflow system",
+  "approvalRequestSchema": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Unique approval request ID (format: approval-{platform}-{action}-{timestamp})",
+        "pattern": "^approval-[a-z]+-[a-z_]+-[0-9]{8}-[0-9]{6}$"
+      },
+      "action_type": {
+        "type": "string",
+        "description": "Type of action requiring approval",
+        "enum": [
+          "facebook_post",
+          "facebook_post_image",
+          "instagram_post",
+          "instagram_carousel"
+        ]
+      },
+      "target_account": {
+        "type": "string",
+        "description": "Account identifier (page_id or ig_account_id)"
+      },
+      "content_preview": {
+        "type": "object",
+        "description": "Preview of content for approval decision",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "First 200 characters of post content",
+            "maxLength": 200
+          },
+          "image_url": {
+            "type": "string",
+            "description": "Path to image file (optional)"
+          },
+          "platform": {
+            "type": "string",
+            "description": "Platform name",
+            "enum": ["facebook", "instagram"]
+          },
+          "link": {
+            "type": "string",
+            "description": "External link if present (optional)",
+            "format": "uri"
+          }
+        },
+        "required": ["message", "platform"]
+      },
+      "risk_level": {
+        "type": "string",
+        "description": "Calculated risk level based on content",
+        "enum": ["low", "medium", "high"]
+      },
+      "parameters": {
+        "type": "object",
+        "description": "Full parameters for action execution (structure varies by action_type)"
+      },
+      "created_at": {
+        "type": "string",
+        "description": "When request was created (ISO 8601)",
+        "format": "date-time"
+      },
+      "status": {
+        "type": "string",
+        "description": "Current approval status",
+        "enum": ["pending", "approved", "denied", "executed", "failed"]
+      },
+      "resolved_at": {
+        "type": "string",
+        "description": "When request was approved/denied (ISO 8601, optional)",
+        "format": "date-time"
+      },
+      "executed_at": {
+        "type": "string",
+        "description": "When action was executed (ISO 8601, optional)",
+        "format": "date-time"
+      },
+      "mcp_server": {
+        "type": "string",
+        "description": "MCP server name",
+        "const": "facebook_instagram_mcp"
+      },
+      "execution_function": {
+        "type": "string",
+        "description": "Function to call on approval",
+        "enum": [
+          "execute_facebook_post_text",
+          "execute_facebook_post_image",
+          "execute_instagram_post_image",
+          "execute_instagram_post_carousel"
+        ]
+      },
+      "result": {
+        "type": "object",
+        "description": "Execution result (optional, populated after execution)",
+        "properties": {
+          "post_id": {
+            "type": "string"
+          },
+          "permalink": {
+            "type": "string",
+            "format": "uri"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "error_message": {
+        "type": "string",
+        "description": "Error details if status is failed (optional)"
+      }
+    },
+    "required": [
+      "id",
+      "action_type",
+      "target_account",
+      "content_preview",
+      "risk_level",
+      "parameters",
+      "created_at",
+      "status",
+      "mcp_server",
+      "execution_function"
+    ]
+  },
+  "riskLevelCalculation": {
+    "description": "Rules for calculating risk level based on content",
+    "rules": [
+      {
+        "condition": "Text-only post, <280 chars, no links",
+        "risk_level": "low",
+        "score": 0
+      },
+      {
+        "condition": "Text with image, or text >280 chars, or contains link",
+        "risk_level": "medium",
+        "score": 1-2
+      },
+      {
+        "condition": "Multiple images (carousel), or scheduled post, or contains sensitive keywords",
+        "risk_level": "high",
+        "score": 3+
+      }
+    ],
+    "scoringFactors": [
+      {
+        "factor": "Message length > 280 chars",
+        "points": 1
+      },
+      {
+        "factor": "Image present",
+        "points": 1
+      },
+      {
+        "factor": "External link present",
+        "points": 1
+      },
+      {
+        "factor": "Multiple images (carousel)",
+        "points": 2
+      },
+      {
+        "factor": "Scheduled post",
+        "points": 1
+      }
+    ]
+  },
+  "fileNamingConvention": {
+    "pattern": "APPROVAL_{ACTION_TYPE}_{TIMESTAMP}.json",
+    "examples": [
+      "APPROVAL_facebook_post_20260318_103045.json",
+      "APPROVAL_instagram_post_20260318_103045.json",
+      "APPROVAL_instagram_carousel_20260318_103045.json"
+    ]
+  },
+  "fileLocations": {
+    "pending": "AI_Employee_Vault/Pending_Approval/",
+    "approved": "AI_Employee_Vault/Approved/",
+    "done": "AI_Employee_Vault/Done/"
+  },
+  "stateTransitions": {
+    "description": "Valid state transitions for approval workflow",
+    "transitions": [
+      {
+        "from": "pending",
+        "to": "approved",
+        "trigger": "User approves request"
+      },
+      {
+        "from": "pending",
+        "to": "denied",
+        "trigger": "User denies request"
+      },
+      {
+        "from": "approved",
+        "to": "executed",
+        "trigger": "Approval executor successfully executes action"
+      },
+      {
+        "from": "approved",
+        "to": "failed",
+        "trigger": "Approval executor fails to execute action"
+      }
+    ]
+  },
+  "exampleRequests": {
+    "facebook_post_text": {
+      "id": "approval-fb-post-20260318-103045",
+      "action_type": "facebook_post",
+      "target_account": "12345",
+      "content_preview": {
+        "message": "Excited to announce our new product launch! Check out the details at our website.",
+        "platform": "facebook",
+        "link": "https://example.com/product"
+      },
+      "risk_level": "medium",
+      "parameters": {
+        "page_id": "12345",
+        "message": "Excited to announce our new product launch! Check out the details at our website. Limited time offer!",
+        "link": "https://example.com/product"
+      },
+      "created_at": "2026-03-18T10:30:45Z",
+      "status": "pending",
+      "mcp_server": "facebook_instagram_mcp",
+      "execution_function": "execute_facebook_post_text"
+    },
+    "instagram_post_image": {
+      "id": "approval-ig-post-20260318-103045",
+      "action_type": "instagram_post",
+      "target_account": "98765",
+      "content_preview": {
+        "message": "New collection dropping soon! 🔥 Stay tuned for the big reveal. #NewCollection #ComingSoon",
+        "image_url": "/path/to/collection-teaser.jpg",
+        "platform": "instagram"
+      },
+      "risk_level": "medium",
+      "parameters": {
+        "account_id": "98765",
+        "caption": "New collection dropping soon! 🔥 Stay tuned for the big reveal. #NewCollection #ComingSoon #Fashion #Style",
+        "image_path": "/path/to/collection-teaser.jpg"
+      },
+      "created_at": "2026-03-18T10:30:45Z",
+      "status": "pending",
+      "mcp_server": "facebook_instagram_mcp",
+      "execution_function": "execute_instagram_post_image"
+    }
+  }
+}

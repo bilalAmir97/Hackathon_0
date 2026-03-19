@@ -213,6 +213,7 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 - Python 3.10+ (001-gmail-approval-workflow)
 - File-based (Obsidian vault structure in AI_Employee_Vault/) (001-gmail-approval-workflow)
 - Error Recovery System (005-error-recovery): Retry patterns, circuit breaker, graceful degradation
+- Python 3.10+ (matching existing codebase) (007-facebook-instagram-mcp)
 
 ## Recent Changes
 - 005-error-recovery: Added error recovery infrastructure (retry, circuit breaker, service health)

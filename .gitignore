@@ -56,3 +56,25 @@ AI_Employee_Vault/Logs/*.jsonl.gz
 AI_Employee_Vault/Logs/.encryption_key
 AI_Employee_Vault/Logs/.checksums.json
 AI_Employee_Vault/Logs/archive/
+
+# State files (tokens, sessions, credentials)
+AI_Employee_Vault/.state/
+.state/
+*_token.json
+*_session.json
+
+# Test/Screenshot images
+*.png
+*.jpg
+*.jpeg
+*.gif
+!AI_Employee_Vault/images/*.png
+!AI_Employee_Vault/images/*.jpg
+
+# Temporary test files
+test_*.py
+!tests/test_*.py
+
+# Vault runtime files
+AI_Employee_Vault/Needs_Action/ALERT_HEALTH_*.md
+AI_Employee_Vault/.quarantine/
