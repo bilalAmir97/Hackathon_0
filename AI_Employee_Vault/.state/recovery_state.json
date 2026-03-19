@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-03-18T12:29:34.232347Z",
+  "last_updated": "2026-03-19T20:11:09.881146Z",
   "circuit_breakers": {
     "odoo_auth": {
       "service_name": "odoo_auth",
@@ -25,6 +25,15 @@
       "state": "CLOSED",
       "failure_count": 0,
       "last_failure_time": null,
+      "cooldown_period": 60.0,
+      "failure_threshold": 5,
+      "success_threshold": 1
+    },
+    "test_service": {
+      "service_name": "test_service",
+      "state": "OPEN",
+      "failure_count": 5,
+      "last_failure_time": "2026-03-19T20:11:09.880931Z",
       "cooldown_period": 60.0,
       "failure_threshold": 5,
       "success_threshold": 1
