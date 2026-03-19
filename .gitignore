@@ -78,3 +78,7 @@ test_*.py
 # Vault runtime files
 AI_Employee_Vault/Needs_Action/ALERT_HEALTH_*.md
 AI_Employee_Vault/.quarantine/
+
+# Twitter MCP specific
+.twitter_cache/
+twitter_state.json

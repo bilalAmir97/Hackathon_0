@@ -1,0 +1,223 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Twitter Approval Workflow Schema",
+  "description": "Schema for Twitter action approval requests",
+  "version": "1.0.0",
+  "definitions": {
+    "twitter_post_tweet": {
+      "type": "object",
+      "description": "Approval request for posting a single tweet",
+      "properties": {
+        "approval_id": {
+          "type": "string",
+          "pattern": "^SOCIAL_TWITTER_POST_TWEET_[0-9]{8}_[0-9]{6}$",
+          "description": "Unique approval identifier"
+        },
+        "action_type": {
+          "type": "string",
+          "const": "twitter_post_tweet"
+        },
+        "email_action_ref": {
+          "type": "string",
+          "const": "social_media_post"
+        },
+        "action_params": {
+          "type": "object",
+          "properties": {
+            "platform": {
+              "type": "string",
+              "const": "twitter"
+            },
+            "post_type": {
+              "type": "string",
+              "const": "tweet"
+            }
+          },
+          "required": ["platform", "post_type"]
+        },
+        "risk_assessment": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "reasoning": {
+          "type": "string",
+          "description": "Human-readable explanation of why this action is needed"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When approval request was created"
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 280,
+              "description": "Tweet text content"
+            },
+            "image_paths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 4,
+              "description": "Local file paths to images"
+            },
+            "scheduled_time": {
+              "type": ["string", "null"],
+              "format": "date-time",
+              "description": "When to post (null for immediate)"
+            }
+          },
+          "required": ["text"]
+        }
+      },
+      "required": [
+        "approval_id",
+        "action_type",
+        "email_action_ref",
+        "action_params",
+        "risk_assessment",
+        "reasoning",
+        "created_at",
+        "metadata"
+      ]
+    },
+    "twitter_post_thread": {
+      "type": "object",
+      "description": "Approval request for posting a tweet thread",
+      "properties": {
+        "approval_id": {
+          "type": "string",
+          "pattern": "^SOCIAL_TWITTER_POST_THREAD_[0-9]{8}_[0-9]{6}$",
+          "description": "Unique approval identifier"
+        },
+        "action_type": {
+          "type": "string",
+          "const": "twitter_post_thread"
+        },
+        "email_action_ref": {
+          "type": "string",
+          "const": "social_media_post"
+        },
+        "action_params": {
+          "type": "object",
+          "properties": {
+            "platform": {
+              "type": "string",
+              "const": "twitter"
+            },
+            "post_type": {
+              "type": "string",
+              "const": "thread"
+            }
+          },
+          "required": ["platform", "post_type"]
+        },
+        "risk_assessment": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "reasoning": {
+          "type": "string",
+          "description": "Human-readable explanation of why this action is needed"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When approval request was created"
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "tweets": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 260
+              },
+              "minItems": 2,
+              "maxItems": 25,
+              "description": "Array of tweet texts (will be auto-numbered)"
+            },
+            "image_paths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 4,
+              "description": "Local file paths to images"
+            },
+            "scheduled_time": {
+              "type": ["string", "null"],
+              "format": "date-time",
+              "description": "When to post thread (null for immediate)"
+            }
+          },
+          "required": ["tweets"]
+        }
+      },
+      "required": [
+        "approval_id",
+        "action_type",
+        "email_action_ref",
+        "action_params",
+        "risk_assessment",
+        "reasoning",
+        "created_at",
+        "metadata"
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/definitions/twitter_post_tweet"
+    },
+    {
+      "$ref": "#/definitions/twitter_post_thread"
+    }
+  ],
+  "examples": [
+    {
+      "approval_id": "SOCIAL_TWITTER_POST_TWEET_20260319_103000",
+      "action_type": "twitter_post_tweet",
+      "email_action_ref": "social_media_post",
+      "action_params": {
+        "platform": "twitter",
+        "post_type": "tweet"
+      },
+      "risk_assessment": "low",
+      "reasoning": "Posting product announcement tweet with image",
+      "created_at": "2026-03-19T10:30:00Z",
+      "metadata": {
+        "text": "Excited to announce our new product! 🚀",
+        "image_paths": ["/path/to/product.jpg"],
+        "scheduled_time": null
+      }
+    },
+    {
+      "approval_id": "SOCIAL_TWITTER_POST_THREAD_20260319_103000",
+      "action_type": "twitter_post_thread",
+      "email_action_ref": "social_media_post",
+      "action_params": {
+        "platform": "twitter",
+        "post_type": "thread"
+      },
+      "risk_assessment": "low",
+      "reasoning": "Posting product launch announcement thread",
+      "created_at": "2026-03-19T10:30:00Z",
+      "metadata": {
+        "tweets": [
+          "Big announcement coming! 🎉",
+          "We're launching our new product today!",
+          "Check it out at our website!"
+        ],
+        "image_paths": ["/path/to/product.jpg"],
+        "scheduled_time": null
+      }
+    }
+  ]
+}

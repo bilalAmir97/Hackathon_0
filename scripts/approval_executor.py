@@ -32,6 +32,12 @@ from mcp_servers.facebook_instagram_mcp_server import (
     execute_instagram_post_carousel
 )
 
+# Import Twitter execution functions
+from mcp_servers.twitter_mcp_server import (
+    execute_twitter_post_tweet,
+    execute_twitter_post_thread
+)
+
 
 class ApprovalFileHandler(FileSystemEventHandler):
     """File system event handler for approval workflow.
@@ -287,6 +293,11 @@ class ApprovalExecutor:
             return self.execute_instagram_post_image(approval_data)
         elif action_type == 'instagram_post_carousel':
             return self.execute_instagram_post_carousel(approval_data)
+        # Handle Twitter actions from Twitter MCP server
+        elif action_type == 'twitter_post_tweet':
+            return self.execute_twitter_post_tweet(approval_data)
+        elif action_type == 'twitter_post_thread':
+            return self.execute_twitter_post_thread(approval_data)
         else:
             return {
                 'status': 'error',
@@ -642,6 +653,95 @@ class ApprovalExecutor:
 
         except Exception as e:
             print(f"❌ Instagram carousel execution failed: {e}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
+
+    def execute_twitter_post_tweet(self, approval_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute Twitter tweet post action.
+
+        Args:
+            approval_data: Parsed approval file data with tweet details
+
+        Returns:
+            Dict with execution result
+        """
+        try:
+            approval_id = approval_data.get('approval_id')
+            metadata = approval_data.get('metadata', {})
+
+            if not approval_id:
+                return {
+                    'status': 'error',
+                    'error': 'Approval ID not found in approval data'
+                }
+
+            # Execute via imported function
+            result = execute_twitter_post_tweet(approval_id, metadata)
+
+            if result.get('success'):
+                print(f"✅ Twitter tweet posted: {result.get('tweet_id')}")
+                return {
+                    'status': 'success',
+                    'tweet_id': result.get('tweet_id'),
+                    'url': result.get('url'),
+                    'message': f"Tweet posted successfully"
+                }
+            else:
+                print(f"❌ Twitter tweet failed: {result.get('error')}")
+                return {
+                    'status': 'error',
+                    'error': result.get('error')
+                }
+
+        except Exception as e:
+            print(f"❌ Twitter tweet execution failed: {e}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
+
+    def execute_twitter_post_thread(self, approval_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute Twitter thread post action.
+
+        Args:
+            approval_data: Parsed approval file data with thread details
+
+        Returns:
+            Dict with execution result
+        """
+        try:
+            approval_id = approval_data.get('approval_id')
+            metadata = approval_data.get('metadata', {})
+
+            if not approval_id:
+                return {
+                    'status': 'error',
+                    'error': 'Approval ID not found in approval data'
+                }
+
+            # Execute via imported function
+            result = execute_twitter_post_thread(approval_id, metadata)
+
+            if result.get('success'):
+                tweet_ids = result.get('tweet_ids', [])
+                print(f"✅ Twitter thread posted: {len(tweet_ids)} tweets")
+                return {
+                    'status': 'success',
+                    'tweet_ids': tweet_ids,
+                    'urls': result.get('urls', []),
+                    'message': f"Thread posted successfully with {len(tweet_ids)} tweets"
+                }
+            else:
+                print(f"❌ Twitter thread failed: {result.get('error')}")
+                return {
+                    'status': 'error',
+                    'error': result.get('error')
+                }
+
+        except Exception as e:
+            print(f"❌ Twitter thread execution failed: {e}")
             return {
                 'status': 'error',
                 'error': str(e)
