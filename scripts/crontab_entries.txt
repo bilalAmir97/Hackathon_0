@@ -1,5 +1,5 @@
 # AI Employee Automation - Cron Schedule
-# Install with: crontab scripts/crontab_entries.txt
+# Install with: bash scripts/setup_cron.sh
 # View with: crontab -l
 
 # Project directory
@@ -7,16 +7,25 @@ SHELL=/bin/bash
 PATH=/home/bilal-amir/.local/bin:/usr/local/bin:/usr/bin:/bin
 PROJECT_DIR=/mnt/d/Bilal/Bilal/Bilal_Data/Hackathon/Hackathon_0
 
+# Weekly Business Audit - Every Sunday at 8 PM
+0 20 * * 0 cd $PROJECT_DIR && /home/bilal-amir/.local/bin/uv run python scripts/generate_weekly_audit.py --days 7 >> /tmp/ai-employee-cron.log 2>&1
+
+# Weekly Audit Fallback 1: On system reboot (if laptop was off during scheduled time)
+@reboot sleep 120 && cd $PROJECT_DIR && /home/bilal-amir/.local/bin/uv run python scripts/generate_weekly_audit.py --check-if-missed >> /tmp/ai-employee-cron.log 2>&1
+
+# Weekly Audit Fallback 2: Daily check at 4 PM (catches missed audits from sleep/shutdown)
+0 16 * * * cd $PROJECT_DIR && /home/bilal-amir/.local/bin/uv run python scripts/generate_weekly_audit.py --check-if-missed >> /tmp/ai-employee-cron.log 2>&1
+
 # Daily briefing at 9:00 PM (when user is actively using laptop)
 0 21 * * * cd $PROJECT_DIR && /home/bilal-amir/.local/bin/uv run python scripts/daily_briefing.py >> /tmp/ai-employee-cron.log 2>&1
 
-# Backup: Run briefing on reboot (in case laptop was off/asleep at 9 PM)
-@reboot sleep 90 && cd $PROJECT_DIR && /home/bilal-amir/.local/bin/uv run python scripts/daily_briefing.py >> /tmp/ai-employee-cron.log 2>&1
+# Daily Briefing Fallback: On reboot (in case laptop was off/asleep at 9 PM)
+@reboot sleep 90 && cd $PROJECT_DIR && /home/bilal-amir/.local/bin/uv run python scripts/daily_briefing.py --check-if-missed >> /tmp/ai-employee-cron.log 2>&1
 
 # Health check every 5 minutes
 */5 * * * * cd $PROJECT_DIR && /home/bilal-amir/.local/bin/uv run python scripts/health_check.py >> /tmp/ai-employee-cron.log 2>&1
 
-# Weekly audit on Sunday at 11:00 PM
+# Log rotation - Every Sunday at 11:00 PM
 0 23 * * 0 cd $PROJECT_DIR && bash scripts/rotate_logs.sh >> /tmp/ai-employee-cron.log 2>&1
 
 # PM2 resurrection on reboot (ensures services restart after system reboot)

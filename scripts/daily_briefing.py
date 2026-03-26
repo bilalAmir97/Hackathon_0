@@ -10,9 +10,14 @@ Runs every morning to create a summary of:
 """
 
 import json
+import sys
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, List
+
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from scripts.audit_logger import AuditLogger
 
 
@@ -26,6 +31,60 @@ class DailyBriefing:
         self.logs = self.vault_path / "Logs"
         self.dashboard = self.vault_path / "Dashboard.md"
         self.audit_logger = AuditLogger()
+
+        self.state_path = self.vault_path / ".state"
+        self.state_path.mkdir(exist_ok=True)
+        self.last_run_file = self.state_path / "last_daily_briefing.json"
+
+    def check_if_missed(self) -> bool:
+        """
+        Check if daily briefing was already generated today.
+
+        Returns:
+            True if briefing should be generated, False if already done today
+        """
+        if not self.last_run_file.exists():
+            print("⚠️ No previous briefing found - generating first briefing...")
+            return True
+
+        try:
+            with open(self.last_run_file, 'r') as f:
+                last_run_data = json.load(f)
+
+            last_run_date = datetime.fromisoformat(last_run_data['timestamp']).date()
+            today = datetime.now().date()
+
+            print(f"📅 Last briefing generated: {last_run_date}")
+
+            if last_run_date == today:
+                print(f"✅ Daily briefing already generated today - skipping")
+                return False
+            else:
+                days_since = (today - last_run_date).days
+                print(f"⚠️ Daily briefing missed ({days_since} days ago) - generating now...")
+                return True
+
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
+            print(f"⚠️ Error reading last run file: {e} - generating briefing...")
+            return True
+
+    def save_last_run(self, briefing_path: str):
+        """
+        Save timestamp of last successful briefing generation.
+
+        Args:
+            briefing_path: Path to generated briefing
+        """
+        last_run_data = {
+            'timestamp': datetime.now().isoformat(),
+            'briefing_path': briefing_path,
+            'generated_by': 'daily_briefing'
+        }
+
+        with open(self.last_run_file, 'w') as f:
+            json.dump(last_run_data, f, indent=2)
+
+        print(f"💾 Last run timestamp saved")
 
     def count_pending_tasks(self) -> Dict[str, int]:
         """Count pending tasks by type"""
@@ -177,6 +236,9 @@ class DailyBriefing:
 
         print(f"✓ Briefing saved: {filepath}")
 
+        # Save last run timestamp
+        self.save_last_run(str(filepath))
+
         # Also update Dashboard
         if self.dashboard.exists():
             dashboard_content = self.dashboard.read_text()
@@ -191,11 +253,26 @@ class DailyBriefing:
 
 def main():
     """Main entry point"""
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Generate daily morning briefing')
+    parser.add_argument('--check-if-missed', action='store_true',
+                        help='Check if briefing was already generated today before creating')
+
+    args = parser.parse_args()
+
     print("=" * 70)
     print("📋 Generating Daily Morning Briefing")
     print("=" * 70)
 
     briefing = DailyBriefing()
+
+    # If check-if-missed flag is set, check before generating
+    if args.check_if_missed:
+        if not briefing.check_if_missed():
+            print("\n✅ Daily briefing is up to date - no action needed")
+            return
+
     content = briefing.generate_briefing()
     briefing.save_briefing(content)
 

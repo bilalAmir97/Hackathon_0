@@ -2,59 +2,45 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://hackathon0.ai-employee/schemas/approval-request.json",
   "title": "Approval Request",
-  "description": "Schema for approval request files in Pending_Approval folder",
+  "description": "Schema for approval request files (supports email, WhatsApp, social media, and other approval types)",
   "type": "object",
   "required": [
     "approval_id",
-    "action_type",
-    "email_action_ref",
-    "action_params",
-    "risk_assessment",
-    "reasoning",
-    "created_at"
+    "action_type"
   ],
   "properties": {
     "approval_id": {
       "type": "string",
-      "description": "Unique approval identifier",
-      "pattern": "^APPROVAL_[0-9]{8}_[0-9]{6}_[a-z_]+$"
+      "description": "Unique approval identifier"
     },
     "action_type": {
       "type": "string",
       "description": "Type of action requiring approval",
-      "enum": ["email_send", "payment", "api_call"]
+      "enum": [
+        "email_send",
+        "whatsapp_reply",
+        "facebook_post_text",
+        "facebook_post_image",
+        "instagram_post_image",
+        "instagram_post_carousel",
+        "twitter_post_tweet",
+        "twitter_post_thread",
+        "payment",
+        "api_call"
+      ]
+    },
+    "operation": {
+      "type": "string",
+      "description": "Operation type (for Odoo operations)",
+      "enum": ["invoice", "payment"]
     },
     "email_action_ref": {
       "type": "string",
-      "description": "Reference to Email Action Item (email_id)",
-      "pattern": "^[a-zA-Z0-9]+$"
+      "description": "Reference to Email Action Item (optional, for email_send only)"
     },
     "action_params": {
       "type": "object",
-      "description": "Parameters for action execution",
-      "required": ["recipient", "subject", "body"],
-      "properties": {
-        "recipient": {
-          "type": "string",
-          "description": "Email recipient address",
-          "format": "email"
-        },
-        "subject": {
-          "type": "string",
-          "description": "Email subject line"
-        },
-        "body": {
-          "type": "string",
-          "description": "Email body content"
-        },
-        "attachments": {
-          "type": "array",
-          "description": "Attachment references",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
+      "description": "Parameters for action execution (optional)"
     },
     "risk_assessment": {
       "type": "string",
@@ -63,8 +49,7 @@
     },
     "reasoning": {
       "type": "string",
-      "description": "Why this action is needed",
-      "minLength": 10
+      "description": "Why this action is needed"
     },
     "alternatives_considered": {
       "type": "array",
@@ -78,6 +63,16 @@
       "description": "Approval request creation timestamp",
       "format": "date-time"
     },
+    "expires_at": {
+      "type": "string",
+      "description": "Approval expiration timestamp",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "description": "Current approval status",
+      "enum": ["pending", "approved", "rejected", "expired"]
+    },
     "approved_at": {
       "type": "string",
       "description": "Approval timestamp (if approved)",
@@ -90,6 +85,10 @@
     "rejection_reason": {
       "type": "string",
       "description": "Reason for rejection (if rejected)"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the approval"
     }
   }
 }

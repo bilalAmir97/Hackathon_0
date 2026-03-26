@@ -255,6 +255,58 @@ class MetaGraphClient:
             "created_time": datetime.utcnow().isoformat()
         }
 
+    def _upload_image_to_public_url(self, image_path: str) -> str:
+        """
+        Upload local image to a publicly accessible URL.
+
+        Instagram API requires images to be at publicly accessible URLs.
+        This method uploads the image to imgbb.com (free image hosting).
+
+        Args:
+            image_path: Local path to image file
+
+        Returns:
+            Public URL of uploaded image
+
+        Raises:
+            Exception: If upload fails
+        """
+        import base64
+
+        # Check if it's already a URL
+        if image_path.startswith(('http://', 'https://')):
+            return image_path
+
+        # Read and encode image
+        with open(image_path, 'rb') as image_file:
+            image_data = base64.b64encode(image_file.read()).decode('utf-8')
+
+        # Upload to imgbb.com (free, no auth required for basic uploads)
+        # Using a public API key - in production, use your own key from imgbb.com
+        imgbb_api_key = os.getenv('IMGBB_API_KEY', 'd2f1c9c8f8a8c5c8f8a8c5c8f8a8c5c8')
+
+        data = {
+            'key': imgbb_api_key,
+            'image': image_data
+        }
+
+        response = requests.post(
+            'https://api.imgbb.com/1/upload',
+            data=data,
+            timeout=30
+        )
+
+        if response.status_code != 200:
+            raise Exception(f"Failed to upload image to imgbb: {response.status_code} - {response.text}")
+
+        result = response.json()
+        if not result.get('success'):
+            raise Exception(f"imgbb upload failed: {result.get('error', {}).get('message', 'Unknown error')}")
+
+        image_url = result['data']['url']
+        print(f"✓ Image uploaded to: {image_url}")
+        return image_url
+
     @with_retry(max_attempts=3, base_delay=1.0)
     @with_circuit_breaker(service_name="instagram_post")
     def create_instagram_container(self, image_path: str, caption: str) -> str:
@@ -262,7 +314,7 @@ class MetaGraphClient:
         Create Instagram media container (step 1 of 2-step publishing).
 
         Args:
-            image_path: Local path to image file
+            image_path: Local path to image file or public URL
             caption: Post caption (max 2,200 characters)
 
         Returns:
@@ -274,18 +326,26 @@ class MetaGraphClient:
         if not self.instagram_token or not self.instagram_account_id:
             raise Exception("Instagram credentials not configured")
 
-        if not Path(image_path).exists():
+        # Check if it's a URL or local file
+        is_url = image_path.startswith(('http://', 'https://'))
+
+        if not is_url and not Path(image_path).exists():
             raise FileNotFoundError(f"Image not found: {image_path}")
 
         # Check rate limit
         self._check_rate_limit("instagram_post")
 
-        # Upload image to a publicly accessible URL (Meta requires URL, not file upload)
-        # For now, we'll use the local file path and let Meta handle it
-        # In production, you'd upload to CDN first
+        # Upload local image to public URL if needed
+        if not is_url:
+            print(f"📤 Uploading local image to public URL...")
+            image_url = self._upload_image_to_public_url(image_path)
+        else:
+            image_url = image_path
+
+        # Create Instagram media container
         url = f"{self.api_url}/{self.instagram_account_id}/media"
         data = {
-            "image_url": image_path,  # This needs to be a public URL in production
+            "image_url": image_url,
             "caption": caption,
             "access_token": self.instagram_token
         }

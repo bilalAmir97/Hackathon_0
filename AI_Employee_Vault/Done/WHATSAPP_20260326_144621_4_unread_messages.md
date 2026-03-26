@@ -1,0 +1,27 @@
+---
+type: whatsapp_message
+from: 4 unread messages
+received: 2026-03-26T14:46:21.354685Z
+priority: high
+status: pending
+original_timestamp: Q4 Agentic AI (Sunday 2 to 5)
+---
+
+## WhatsApp Message from 4 unread messages
+
+**Received**: Q4 Agentic AI (Sunday 2 to 5)
+
+### Message Content
+
+Q4 Agentic AI (Sunday 2 to 5)
+
+### Suggested Actions
+
+- [ ] Reply to 4 unread messages
+- [ ] Forward to relevant party
+- [ ] Create task or reminder
+- [ ] Archive after processing
+
+### Notes
+
+Priority message detected by WhatsApp watcher.

@@ -144,11 +144,17 @@ class WhatsAppProcessor:
         auto_response = self.check_auto_response(parsed)
         if auto_response:
             result["auto_response"] = auto_response
-            print(f"   🤖 Auto-response: {auto_response[:50]}...")
+            print(f"   🤖 Auto-response suggested: {auto_response[:50]}...")
+
+            # Create approval request for reply
+            approval_file = self.create_reply_approval_request(parsed, auto_response)
+            result["approval_file"] = str(approval_file)
 
         # Execute action
         if action_type == "notify_and_log":
             result["actions_taken"] = ["logged", "notification_created"]
+            if auto_response:
+                result["actions_taken"].append("approval_request_created")
             self.log_message(parsed, classification)
             self.create_notification(parsed, auto_response)
             result["success"] = True
@@ -236,7 +242,8 @@ class WhatsAppProcessor:
         notification += f"**Preview**: {parsed['message'][:100]}...\n"
 
         if auto_response:
-            notification += f"\n**Auto-Response Sent**: {auto_response[:80]}...\n"
+            notification += f"\n**Auto-Response Suggested**: {auto_response[:80]}...\n"
+            notification += f"**Status**: Pending approval in /Pending_Approval\n"
 
         notification += "\n"
 
@@ -246,6 +253,75 @@ class WhatsAppProcessor:
             notification_file.write_text(content + notification)
         else:
             notification_file.write_text(notification)
+
+    def create_reply_approval_request(self, parsed: Dict, auto_response: str):
+        """Create approval request for WhatsApp reply.
+
+        Args:
+            parsed: Parsed message data
+            auto_response: Suggested response text
+        """
+        pending_approval = self.vault_path / "Pending_Approval"
+        pending_approval.mkdir(parents=True, exist_ok=True)
+
+        # Generate approval ID
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        sender_safe = parsed['sender'].replace(' ', '_').replace('/', '_')[:30]
+        approval_id = f"whatsapp_reply_{sender_safe}_{timestamp}"
+
+        # Create approval file
+        approval_file = pending_approval / f"APPROVAL_{approval_id}.md"
+
+        # Calculate expiration (24 hours from now)
+        from datetime import timedelta
+        expires_at = (datetime.now() + timedelta(hours=24)).isoformat() + 'Z'
+
+        approval_content = f"""---
+approval_id: {approval_id}
+action_type: whatsapp_reply
+created_at: {datetime.now().isoformat()}Z
+expires_at: {expires_at}
+status: pending
+risk_assessment: low
+action_params:
+  chat_name: "{parsed['sender']}"
+  message_text: "{auto_response}"
+reasoning: |
+  Automated reply to WhatsApp message from {parsed['sender']}.
+  Message priority: {parsed['priority']}.
+  Suggested response acknowledges receipt.
+---
+
+## WhatsApp Reply Approval Request
+
+**To**: {parsed['sender']}
+**Message**: "{auto_response}"
+
+### Original Message Context
+- **From**: {parsed['sender']}
+- **Received**: {parsed['timestamp']}
+- **Content**: {parsed['message'][:200]}
+- **Priority**: {parsed['priority']}
+
+### Suggested Action
+Send automated reply via WhatsApp Web.
+
+### To Approve
+Move this file to `/Approved` folder.
+
+### To Reject
+Move this file to `/Rejected` folder.
+
+### Notes
+- Reply will be sent via Playwright automation to WhatsApp Web
+- Session must be active (logged in)
+- Message will be logged in audit trail
+"""
+
+        approval_file.write_text(approval_content)
+        print(f"   📋 Created approval request: {approval_file.name}")
+
+        return approval_file
 
     def move_to_done(self, file_path: Path):
         """Move processed file to Done folder"""
