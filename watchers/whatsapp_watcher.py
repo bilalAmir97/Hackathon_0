@@ -437,15 +437,30 @@ Priority message detected by WhatsApp watcher.
                 "Playwright not installed. Run: uv run playwright install chromium"
             )
 
+        print("🚀 Launching browser...")
+
         # Launch browser with persistent context for session management
         self.playwright = await async_playwright().start()
 
         # WhatsApp Web blocks headless mode, must use headed browser
+        # Add more args to avoid detection and improve stability
         context = await self.playwright.chromium.launch_persistent_context(
             user_data_dir=str(self.session_dir),
             headless=False,
-            args=['--no-sandbox', '--disable-blink-features=AutomationControlled']
+            args=[
+                '--no-sandbox',
+                '--disable-blink-features=AutomationControlled',
+                '--disable-dev-shm-usage',  # Overcome limited resource problems
+                '--disable-web-security',  # Disable web security (for testing)
+                '--disable-features=IsolateOrigins,site-per-process',  # Disable site isolation
+            ],
+            viewport={'width': 1280, 'height': 720},  # Set reasonable viewport
+            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',  # Use real user agent
+            ignore_https_errors=True,  # Ignore HTTPS errors
+            slow_mo=100  # Slow down operations by 100ms for stability
         )
+
+        print("✓ Browser launched")
 
         return context
 
@@ -460,25 +475,65 @@ Priority message detected by WhatsApp watcher.
         """
         whatsapp_url = "https://web.whatsapp.com"
 
-        # Navigate with timeout
-        await page.goto(whatsapp_url, wait_until='domcontentloaded', timeout=60000)
+        print("🌐 Navigating to WhatsApp Web...")
+
+        # Navigate with extended timeout and wait for network idle
+        try:
+            await page.goto(
+                whatsapp_url,
+                wait_until='networkidle',  # Wait for network to be idle
+                timeout=120000  # 2 minutes
+            )
+            print("✓ Page loaded")
+        except Exception as e:
+            print(f"⚠️ Navigation timeout, trying with domcontentloaded...")
+            # Fallback: try with domcontentloaded
+            await page.goto(whatsapp_url, wait_until='domcontentloaded', timeout=90000)
 
         # Wait for WhatsApp Web to load (either QR code or chat list)
-        print("⏳ Waiting for WhatsApp Web to load...")
-        try:
-            # Wait for main app container first
-            await page.wait_for_selector('#app', timeout=30000)
+        print("⏳ Waiting for WhatsApp Web interface...")
 
-            # Then wait for either QR code (canvas) or chat list grid
-            # WhatsApp Web now uses role="grid" for the chat list
-            await page.wait_for_selector(
-                'canvas, div[aria-label="Chat list"][role="grid"]',
-                timeout=180000  # 3 minutes for full load
-            )
-            print("✓ WhatsApp Web loaded")
+        # Step 1: Wait for main app container (with extended timeout)
+        try:
+            await page.wait_for_selector('#app', timeout=60000)
+            print("✓ App container loaded")
         except Exception as e:
-            print(f"⚠️ Timeout waiting for WhatsApp Web: {e}")
-            raise
+            print(f"⚠️ App container not found: {e}")
+            # Try to continue anyway
+
+        # Step 2: Wait for either QR code or chat interface
+        # Try multiple selectors with longer timeout
+        selectors_to_try = [
+            'canvas',  # QR code
+            'div[aria-label="Chat list"]',  # Chat list (any variant)
+            'div[role="grid"]',  # Grid layout
+            '[data-testid="chat-list"]',  # Test ID selector
+            'div[data-tab="3"]',  # Search box (indicates loaded)
+        ]
+
+        loaded = False
+        for selector in selectors_to_try:
+            try:
+                print(f"   Trying selector: {selector}")
+                await page.wait_for_selector(selector, timeout=30000)
+                print(f"✓ WhatsApp Web loaded (matched: {selector})")
+                loaded = True
+                break
+            except:
+                continue
+
+        if not loaded:
+            print("⚠️ Could not detect WhatsApp Web interface with standard selectors")
+            print("   Waiting additional 10 seconds for manual load...")
+            await page.wait_for_timeout(10000)
+
+            # Take screenshot for debugging
+            screenshot_path = f"/tmp/whatsapp_debug_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.png"
+            try:
+                await page.screenshot(path=screenshot_path)
+                print(f"📸 Screenshot saved: {screenshot_path}")
+            except:
+                pass
 
     async def _wait_for_login(self, page) -> bool:
         """Wait for user to complete QR code login if needed.

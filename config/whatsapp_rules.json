@@ -9,45 +9,40 @@
     "emergency",
     "critical",
     "deadline",
-    "meeting",
-    "call"
+    "please",
+    "need"
   ],
   "ignore_senders": [
-    "WhatsApp",
-    "Promotional"
+    "WhatsApp"
   ],
   "sender_rules": {
-    "GIAIC": {
-      "action": "log_only",
-      "auto_respond": false,
-      "response_template": null
+    "Client A": {
+      "classification": "priority",
+      "auto_respond": true,
+      "response_template": "Thank you for your message! I've received your request and will get back to you within 24 hours."
     },
-    "Panaversity": {
-      "action": "log_only",
-      "auto_respond": false,
-      "response_template": null
-    },
-    "Think Velocity": {
-      "action": "log_only",
-      "auto_respond": false,
-      "response_template": null
+    "Boss": {
+      "classification": "priority",
+      "auto_respond": true,
+      "response_template": "Got it! I'll handle this right away."
     }
   },
   "keyword_responses": {
-    "meeting": {
-      "enabled": true,
-      "response": "Thanks for the meeting request. I'll check my calendar and get back to you shortly.",
-      "notify": true
-    },
     "invoice": {
-      "enabled": false,
-      "response": "Invoice received. I'll process it within 24 hours.",
-      "notify": true
+      "enabled": true,
+      "response": "Thank you for your inquiry about the invoice. I'll review it and send you the details shortly."
+    },
+    "payment": {
+      "enabled": true,
+      "response": "I've received your payment inquiry. Let me check the status and get back to you."
     },
     "urgent": {
       "enabled": true,
-      "response": "I've received your urgent message and will respond as soon as possible.",
-      "notify": true
+      "response": "I understand this is urgent. I'm on it and will respond as soon as possible."
+    },
+    "help": {
+      "enabled": true,
+      "response": "I'm here to help! Let me look into this for you."
     }
   },
   "default_actions": {
@@ -58,35 +53,9 @@
   },
   "auto_response_settings": {
     "enabled": true,
-    "delay_seconds": 60,
-    "only_during_work_hours": false,
-    "work_hours": {
-      "start": "09:00",
-      "end": "18:00",
-      "timezone": "UTC"
-    }
+    "comment": "Set to true to enable automatic reply approval requests"
   },
   "notification_settings": {
-    "dashboard": true,
-    "email": false,
-    "email_address": null,
-    "priority_only": false
-  },
-  "advanced_rules": {
-    "forward_to_email": {
-      "enabled": false,
-      "conditions": [
-        "priority"
-      ],
-      "email_address": null
-    },
-    "create_approval_request": {
-      "enabled": false,
-      "conditions": [
-        "invoice",
-        "payment"
-      ],
-      "approval_type": "email"
-    }
+    "dashboard": true
   }
 }

@@ -28,6 +28,7 @@ The AI Employee system has successfully achieved **Gold Tier** status with all c
 - ✅ **Facebook Integration**: Text posts, image posts with approval workflow
 - ✅ **Instagram Integration**: Image posts, carousel posts with approval workflow
 - ✅ **Twitter Integration**: Tweets, threads, mentions monitoring, engagement metrics
+- ✅ **WhatsApp Reply Automation**: Read messages via Playwright, reply with approval workflow
 
 ### Module 4: Business Intelligence
 - ✅ **Data Collectors**: Odoo, Social Media, Email, Audit Logs, Aggregator
@@ -57,12 +58,13 @@ The AI Employee system has successfully achieved **Gold Tier** status with all c
 ✅ Graceful Degradation: Services continue with reduced functionality
 ```
 
-### MCP Servers (4/4 Operational)
+### MCP Servers (5/5 Operational)
 ```
 ✅ Email MCP Server (EmailMCPClient)
 ✅ Odoo MCP Server (OdooClient)
 ✅ Facebook/Instagram MCP Server (MetaGraphClient)
 ✅ Twitter MCP Server (TwitterClient)
+✅ WhatsApp MCP Server (WhatsAppClient)
 ```
 
 ---
@@ -70,8 +72,8 @@ The AI Employee system has successfully achieved **Gold Tier** status with all c
 ## System Architecture
 
 ### Components
-- **5 Watchers**: Gmail, Vault, WhatsApp, LinkedIn, Filesystem
-- **4 MCP Servers**: Email, Odoo, Facebook/Instagram, Twitter
+- **5 Watchers**: Gmail, Vault, WhatsApp (read+reply), LinkedIn, Filesystem
+- **5 MCP Servers**: Email, Odoo, Facebook/Instagram, Twitter, WhatsApp
 - **5 Data Collectors**: Odoo, Social Media, Email, Audit Logs, Aggregator
 - **Approval Workflow**: File-based state management with human-in-the-loop
 - **Audit System**: JSONL logging with 90-day retention

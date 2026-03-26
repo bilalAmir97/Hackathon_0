@@ -14,6 +14,7 @@ Usage:
 
 import os
 import sys
+import json
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
@@ -38,7 +39,60 @@ class WeeklyAuditGenerator:
         self.briefings_path = self.vault_path / 'Briefings'
         self.briefings_path.mkdir(parents=True, exist_ok=True)
 
+        self.state_path = self.vault_path / '.state'
+        self.state_path.mkdir(parents=True, exist_ok=True)
+        self.last_run_file = self.state_path / 'last_weekly_audit.json'
+
         self.aggregator = DataAggregator()
+
+    def check_if_missed(self) -> bool:
+        """
+        Check if weekly audit is overdue and needs to be generated.
+
+        Returns:
+            True if audit should be generated, False if already done recently
+        """
+        if not self.last_run_file.exists():
+            print("⚠️ No previous audit found - generating first audit...")
+            return True
+
+        try:
+            with open(self.last_run_file, 'r') as f:
+                last_run_data = json.load(f)
+
+            last_run_date = datetime.fromisoformat(last_run_data['timestamp'])
+            days_since = (datetime.now() - last_run_date).days
+
+            print(f"📅 Last audit generated: {last_run_date.strftime('%Y-%m-%d %H:%M:%S')} ({days_since} days ago)")
+
+            if days_since < 7:
+                print(f"✅ Weekly audit already generated {days_since} days ago - skipping")
+                return False
+            else:
+                print(f"⚠️ Weekly audit overdue ({days_since} days) - generating now...")
+                return True
+
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
+            print(f"⚠️ Error reading last run file: {e} - generating audit...")
+            return True
+
+    def save_last_run(self, report_path: str):
+        """
+        Save timestamp of last successful audit generation.
+
+        Args:
+            report_path: Path to generated report
+        """
+        last_run_data = {
+            'timestamp': datetime.now().isoformat(),
+            'report_path': report_path,
+            'generated_by': 'weekly_audit_generator'
+        }
+
+        with open(self.last_run_file, 'w') as f:
+            json.dump(last_run_data, f, indent=2)
+
+        print(f"💾 Last run timestamp saved")
 
     def generate_report(self, days: int = 7) -> str:
         """
@@ -67,6 +121,9 @@ class WeeklyAuditGenerator:
             f.write(report_content)
 
         print(f"✅ Report generated: {report_path}")
+
+        # Save last run timestamp
+        self.save_last_run(str(report_path))
 
         return str(report_path)
 
@@ -485,10 +542,19 @@ def main():
     parser = argparse.ArgumentParser(description='Generate weekly business audit report')
     parser.add_argument('--days', type=int, default=7, help='Number of days to analyze')
     parser.add_argument('--output', type=str, help='Custom output filename')
+    parser.add_argument('--check-if-missed', action='store_true',
+                        help='Check if audit is overdue before generating')
 
     args = parser.parse_args()
 
     generator = WeeklyAuditGenerator()
+
+    # If check-if-missed flag is set, check before generating
+    if args.check_if_missed:
+        if not generator.check_if_missed():
+            print("\n✅ Weekly audit is up to date - no action needed")
+            return
+
     report_path = generator.generate_report(days=args.days)
 
     print(f"\n✅ Weekly audit report generated successfully!")

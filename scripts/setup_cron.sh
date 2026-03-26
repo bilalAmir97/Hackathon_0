@@ -41,6 +41,12 @@ cat > "$CRON_FILE" << CRONEOF
 # Weekly Business Audit - Every Sunday at 8 PM
 0 20 * * 0 cd $PROJECT_DIR && $PYTHON_PATH scripts/generate_weekly_audit.py --days 7 >> $PROJECT_DIR/logs/weekly_audit.log 2>&1
 
+# Weekly Audit Fallback 1: On system reboot (if laptop was off during scheduled time)
+@reboot sleep 120 && cd $PROJECT_DIR && $PYTHON_PATH scripts/generate_weekly_audit.py --check-if-missed >> $PROJECT_DIR/logs/weekly_audit.log 2>&1
+
+# Weekly Audit Fallback 2: Daily check at 4 PM (catches missed audits from sleep/shutdown)
+0 16 * * * cd $PROJECT_DIR && $PYTHON_PATH scripts/generate_weekly_audit.py --check-if-missed >> $PROJECT_DIR/logs/weekly_audit.log 2>&1
+
 # Health Check - Every 5 minutes
 */5 * * * * cd $PROJECT_DIR && $PYTHON_PATH scripts/health_check.py >> $PROJECT_DIR/logs/health_check.log 2>&1
 

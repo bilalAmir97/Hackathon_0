@@ -52,23 +52,6 @@
       "restart_delay": 5000
     },
     {
-      "name": "vault-watcher",
-      "script": "uv",
-      "args": "run python watchers/vault_watcher.py",
-      "cwd": "/mnt/d/Bilal/Bilal/Bilal_Data/Hackathon/Hackathon_0",
-      "env": {
-        "PYTHONUNBUFFERED": "1",
-        "PYTHONPATH": "/mnt/d/Bilal/Bilal/Bilal_Data/Hackathon/Hackathon_0"
-      },
-      "error_file": "/tmp/vault-watcher-error.log",
-      "out_file": "/tmp/vault-watcher-out.log",
-      "log_date_format": "YYYY-MM-DD HH:mm:ss",
-      "autorestart": true,
-      "max_restarts": 10,
-      "min_uptime": "10s",
-      "restart_delay": 5000
-    },
-    {
       "name": "approval-executor",
       "script": "uv",
       "args": "run python scripts/approval_executor.py",
@@ -79,6 +62,23 @@
       },
       "error_file": "/tmp/approval-executor-error.log",
       "out_file": "/tmp/approval-executor-out.log",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss",
+      "autorestart": true,
+      "max_restarts": 10,
+      "min_uptime": "10s",
+      "restart_delay": 5000
+    },
+    {
+      "name": "whatsapp-watcher",
+      "script": "uv",
+      "args": "run python watchers/whatsapp_watcher.py",
+      "cwd": "/mnt/d/Bilal/Bilal/Bilal_Data/Hackathon/Hackathon_0",
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONPATH": "/mnt/d/Bilal/Bilal/Bilal_Data/Hackathon/Hackathon_0"
+      },
+      "error_file": "/tmp/whatsapp-watcher-error.log",
+      "out_file": "/tmp/whatsapp-watcher-out.log",
       "log_date_format": "YYYY-MM-DD HH:mm:ss",
       "autorestart": true,
       "max_restarts": 10,

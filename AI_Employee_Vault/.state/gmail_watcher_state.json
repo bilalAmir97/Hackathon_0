@@ -1,15 +1,15 @@
 {
-  "last_poll_timestamp": "2026-03-14T00:08:04.600316Z",
+  "last_poll_timestamp": "2026-03-26T14:56:55.343693Z",
   "processed_email_ids": [
-    "19c95aaad450b92e",
-    "19ce60f77f19e67f",
-    "19c95ab7e5c61f3f",
     "19ca03cbda2fe128",
-    "19c95a92d7d8738f"
+    "19c95ab7e5c61f3f",
+    "19c95aaad450b92e",
+    "19c95a92d7d8738f",
+    "19ce60f77f19e67f"
   ],
   "error_count": 0,
   "last_error": {
-    "timestamp": "2026-02-27T14:12:18.350990Z",
+    "timestamp": "2026-03-26T13:43:01.138966Z",
     "error_type": "ServerNotFoundError",
     "error_message": "Unable to find the server at gmail.googleapis.com"
   },
@@ -29,5 +29,34 @@
     ],
     "max_emails_per_poll": 20
   },
-  "queued_operations": []
+  "queued_operations": [
+    {
+      "type": "poll",
+      "timestamp": "2026-03-26T08:43:19.920771Z"
+    },
+    {
+      "type": "poll",
+      "timestamp": "2026-03-26T10:51:55.236805Z"
+    },
+    {
+      "type": "poll",
+      "timestamp": "2026-03-26T11:03:13.558355Z"
+    },
+    {
+      "type": "poll",
+      "timestamp": "2026-03-26T11:58:45.371010Z"
+    },
+    {
+      "type": "poll",
+      "timestamp": "2026-03-26T13:42:49.099756Z"
+    },
+    {
+      "type": "poll",
+      "timestamp": "2026-03-26T14:11:25.241619Z"
+    },
+    {
+      "type": "poll",
+      "timestamp": "2026-03-26T14:32:55.019599Z"
+    }
+  ]
 }

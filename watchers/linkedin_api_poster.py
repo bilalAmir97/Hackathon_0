@@ -513,6 +513,111 @@ class LinkedInAPIPoster:
         else:
             return False, f"Unsupported file type: {ext} (supported: jpg, png, mp4)"
 
+    def mark_as_posted(self, post_data: Dict, post_id: str):
+        """Move approved post to Posted_LinkedIn folder with metadata."""
+        try:
+            source_file = post_data['file_path']
+
+            # Create posted filename with timestamp and post ID
+            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            posted_filename = f"POSTED_{timestamp}_{source_file.stem}.md"
+            dest_file = self.posted_folder / posted_filename
+
+            # Read original content
+            content = source_file.read_text()
+
+            # Add posted metadata
+            posted_content = f"""---
+posted_at: {datetime.utcnow().isoformat()}
+linkedin_post_id: {post_id}
+linkedin_url: https://www.linkedin.com/feed/update/{post_id}
+status: posted
+---
+
+{content}
+
+---
+
+## Posted Metadata
+
+- **Posted At:** {datetime.utcnow().isoformat()}
+- **LinkedIn Post ID:** {post_id}
+- **LinkedIn URL:** https://www.linkedin.com/feed/update/{post_id}
+- **Status:** Successfully posted via LinkedIn API
+"""
+
+            # Write to Posted_LinkedIn folder
+            dest_file.write_text(posted_content)
+
+            # Remove from Approved_LinkedIn folder
+            source_file.unlink()
+
+            self.logger.info(f"✓ Moved to Posted_LinkedIn: {posted_filename}")
+
+        except Exception as e:
+            self.logger.error(f"Failed to mark as posted: {e}")
+
+    def create_failure_alert(self, post_data: Dict, error_message: str):
+        """Create failure alert in Needs_Action folder."""
+        try:
+            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            alert_filename = f"ALERT_{timestamp}_linkedin_post_failed.md"
+            alert_path = self.vault_path / "Needs_Action" / alert_filename
+
+            # Ensure Needs_Action folder exists
+            alert_path.parent.mkdir(parents=True, exist_ok=True)
+
+            source_file = post_data['file_path']
+            content_preview = post_data['content'][:200] if len(post_data['content']) > 200 else post_data['content']
+
+            alert_content = f"""# LinkedIn Post Failure Alert
+
+**Alert ID:** ALERT_{timestamp}_linkedin_post_failed
+**Created:** {datetime.utcnow().isoformat()}
+**Severity:** HIGH
+**Source:** LinkedIn API Poster
+
+---
+
+## Error Details
+
+**Error Message:** {error_message}
+
+**Original File:** {source_file.name}
+
+---
+
+## Content Preview
+
+{content_preview}
+
+---
+
+## Action Required
+
+1. Review the error message above
+2. Check LinkedIn API credentials and token validity
+3. Verify media files if applicable
+4. Fix the issue and move the file back to Approved_LinkedIn/ to retry
+5. Or delete the original file if the post is no longer needed
+
+---
+
+## Original File Location
+
+The original file remains in: `{source_file}`
+
+---
+
+**Status:** NEEDS_ACTION
+"""
+
+            alert_path.write_text(alert_content)
+            self.logger.info(f"✓ Created failure alert: {alert_filename}")
+
+        except Exception as e:
+            self.logger.error(f"Failed to create failure alert: {e}")
+
     def process_approved_posts(self):
         """Process all approved posts with media support."""
         approved_posts = sorted(self.approved_folder.glob("*.md"), key=lambda x: x.stat().st_mtime)

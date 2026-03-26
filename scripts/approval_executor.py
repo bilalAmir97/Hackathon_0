@@ -38,6 +38,9 @@ from mcp_servers.twitter_mcp_server import (
     execute_twitter_post_thread
 )
 
+# Import WhatsApp execution function
+from mcp_servers.whatsapp_mcp_server import execute_whatsapp_send_message_sync
+
 
 class ApprovalFileHandler(FileSystemEventHandler):
     """File system event handler for approval workflow.
@@ -124,9 +127,9 @@ class ApprovalExecutor:
                 return json.load(f)
 
         # Return minimal schema if file doesn't exist
+        # Made more flexible to support different approval types (email, whatsapp, social media, etc.)
         return {
-            "required": ["approval_id", "action_type", "email_action_ref",
-                        "action_params", "risk_assessment", "reasoning"]
+            "required": ["approval_id", "action_type"]
         }
 
     def validate_approval_file(self, file_path: str) -> bool:
@@ -145,32 +148,51 @@ class ApprovalExecutor:
             # Extract YAML frontmatter
             match = re.search(r'^---\s*\n(.*?)\n---', content, re.DOTALL)
             if not match:
+                print(f"⚠️  No YAML frontmatter found in {Path(file_path).name}")
                 return False
 
             frontmatter = match.group(1).strip()
 
-            # Try to parse as JSON
+            # Parse YAML frontmatter
             try:
-                data = json.loads(frontmatter)
-            except json.JSONDecodeError:
-                # Try YAML parsing (simplified - just check for required fields)
-                required_fields = self.approval_schema.get('required', [])
-                for field in required_fields:
-                    if f"{field}:" not in frontmatter:
-                        return False
-                return True
+                data = yaml.safe_load(frontmatter)
+            except Exception as e:
+                print(f"⚠️  Failed to parse YAML in {Path(file_path).name}: {e}")
+                return False
 
-            # Validate required fields
-            required_fields = self.approval_schema.get('required', [])
-            for field in required_fields:
+            # Check required fields (flexible for different approval types)
+            required = self.approval_schema.get('required', [])
+            missing_fields = []
+            for field in required:
                 if field not in data:
-                    return False
+                    missing_fields.append(field)
+
+            if missing_fields:
+                print(f"⚠️  Missing required fields in {Path(file_path).name}: {missing_fields}")
+                return False
+
+            # Additional validation: check action_type is recognized
+            action_type = data.get('action_type')
+            operation = data.get('operation')
+
+            recognized_types = [
+                'email_send', 'whatsapp_reply',
+                'facebook_post_text', 'facebook_post_image',
+                'instagram_post_image', 'instagram_post_carousel',
+                'twitter_post_tweet', 'twitter_post_thread'
+            ]
+            recognized_operations = ['invoice', 'payment']
+
+            if action_type not in recognized_types and operation not in recognized_operations:
+                print(f"⚠️  Unrecognized action_type/operation in {Path(file_path).name}: {action_type or operation}")
+                # Don't fail validation, just warn
 
             return True
 
         except Exception as e:
-            print(f"Validation error: {e}")
+            print(f"⚠️  Validation error for {Path(file_path).name}: {e}")
             return False
+
 
     def on_file_moved_to_approved(self, file_path: str):
         """Handle file moved to Approved folder.
@@ -298,6 +320,9 @@ class ApprovalExecutor:
             return self.execute_twitter_post_tweet(approval_data)
         elif action_type == 'twitter_post_thread':
             return self.execute_twitter_post_thread(approval_data)
+        # Handle WhatsApp actions from WhatsApp MCP server
+        elif action_type == 'whatsapp_reply':
+            return self.execute_whatsapp_reply(approval_data)
         else:
             return {
                 'status': 'error',
@@ -742,6 +767,62 @@ class ApprovalExecutor:
 
         except Exception as e:
             print(f"❌ Twitter thread execution failed: {e}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
+
+    def execute_whatsapp_reply(self, approval_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute WhatsApp reply action via WhatsApp MCP server.
+
+        Args:
+            approval_data: Parsed approval file data with WhatsApp reply details
+
+        Returns:
+            Dict with execution result
+        """
+        try:
+            action_params = approval_data.get('action_params', {})
+
+            chat_name = action_params.get('chat_name')
+            message_text = action_params.get('message_text')
+
+            if not chat_name:
+                return {
+                    'status': 'error',
+                    'error': 'Missing required field: chat_name'
+                }
+
+            if not message_text:
+                return {
+                    'status': 'error',
+                    'error': 'Missing required field: message_text'
+                }
+
+            # Execute via WhatsApp MCP server
+            result = execute_whatsapp_send_message_sync({
+                'chat_name': chat_name,
+                'message_text': message_text
+            })
+
+            if result.get('status') == 'success':
+                print(f"✅ WhatsApp message sent to {chat_name}")
+                print(f"   Timestamp: {result.get('timestamp')}")
+                return {
+                    'status': 'success',
+                    'chat_name': chat_name,
+                    'timestamp': result.get('timestamp'),
+                    'message': f"WhatsApp message sent to {chat_name}"
+                }
+            else:
+                print(f"❌ WhatsApp message failed: {result.get('error')}")
+                return {
+                    'status': 'error',
+                    'error': result.get('error')
+                }
+
+        except Exception as e:
+            print(f"❌ WhatsApp reply execution failed: {e}")
             return {
                 'status': 'error',
                 'error': str(e)
@@ -1229,11 +1310,26 @@ Manual intervention is required.
         # Start observer
         self.observer.start()
         print("✅ Approval executor started")
+        print("🔄 Polling enabled: Checking Approved/ folder every 30 seconds")
 
         try:
+            import time
+            poll_interval = 30  # Check every 30 seconds
+
             while True:
-                import time
-                time.sleep(1)
+                time.sleep(poll_interval)
+
+                # Periodic polling fallback for WSL/watchdog issues
+                # Check for files in Approved/ folder that weren't detected by watchdog
+                incomplete = self.check_incomplete_actions()
+                if incomplete:
+                    print(f"🔄 Polling detected {len(incomplete)} file(s) in Approved/")
+                    for action_file in incomplete:
+                        try:
+                            self.on_file_moved_to_approved(action_file)
+                        except Exception as e:
+                            print(f"❌ Failed to process {action_file}: {e}")
+
         except KeyboardInterrupt:
             self.observer.stop()
             print("\n⏹️  Approval executor stopped")
